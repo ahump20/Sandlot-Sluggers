@@ -84,20 +84,6 @@ export const generateAIStats = (difficulty, baseCharacter) => {
   };
 };
 
-// Calculate final score bonuses
-export const calculateScoreBonus = (stadium, character) => {
-  let bonus = 0;
-  
-  // Stadium special features
-  if (stadium.specialFeature.includes('wind') && character.power > 7) {
-    bonus += 2;
-  }
-  if (stadium.specialFeature.includes('rainbow')) {
-    bonus += 1;
-  }
-  
-  return bonus;
-};
 
 // Game state management
 export const initializeGameState = (playerCharacter, aiCharacter, stadium) => {
