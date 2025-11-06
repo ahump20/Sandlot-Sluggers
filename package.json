@@ -1,0 +1,25 @@
+{
+  "name": "sandlot-sluggers",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "cf:dev": "wrangler pages dev dist --local true",
+    "cf:deploy": "wrangler pages deploy dist",
+    "cf:migrate": "wrangler d1 execute sandlot-sluggers --file=./schema/progression.sql"
+  },
+  "dependencies": {
+    "@babylonjs/core": "7.1.0",
+    "@babylonjs/loaders": "7.1.0",
+    "@babylonjs/materials": "7.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "4.20240524.0",
+    "typescript": "5.4.5",
+    "vite": "5.2.11",
+    "wrangler": "3.59.0"
+  }
+}
