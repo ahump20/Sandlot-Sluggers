@@ -74,8 +74,16 @@ export class GameEngine {
   private isPitching: boolean = false;
   private isBatting: boolean = false;
   private onStateChange: (state: GameState) => void;
+  private isReady: boolean = false;
 
-  constructor(config: GameConfig) {
+  static async create(config: GameConfig): Promise<GameEngine> {
+    const engine = new GameEngine(config);
+    await engine.initialize();
+    engine.startRenderLoop();
+    return engine;
+  }
+
+  private constructor(config: GameConfig) {
     this.engine = new Engine(config.canvas, true, {
       adaptToDeviceRatio: true,
       powerPreference: "high-performance"
@@ -112,15 +120,15 @@ export class GameEngine {
 
     new HemisphericLight("light", new Vector3(0, 1, 0), this.scene);
 
-    void this.initialize();
+    window.addEventListener("resize", () => {
+      this.engine.resize();
+    });
+  }
 
+  private startRenderLoop(): void {
     this.engine.runRenderLoop(() => {
       this.scene.render();
       this.update();
-    });
-
-    window.addEventListener("resize", () => {
-      this.engine.resize();
     });
   }
 
@@ -128,6 +136,7 @@ export class GameEngine {
     await this.initializePhysics();
     this.createField();
     this.setupInputHandlers();
+    this.isReady = true;
   }
 
   private async initializePhysics(): Promise<void> {
