@@ -233,9 +233,6 @@ export class AdvancedRenderer {
     material.roughness = 0.7;
     material.metallic = 0.0;
 
-    // Make it glow slightly when hit
-    this.glowLayer?.addIncludedOnlyMesh(material.getBindedMeshes()[0]);
-
     return material;
   }
 
