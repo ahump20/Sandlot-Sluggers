@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { getGameStats, getHighScores, resetGameStats } from '../utils/storage';
 
 const StatsScreen = ({ onBack }) => {
@@ -18,11 +18,24 @@ const StatsScreen = ({ onBack }) => {
   };
 
   const handleReset = async () => {
-    const confirmed = confirm('Are you sure you want to reset all statistics?');
-    if (confirmed) {
-      await resetGameStats();
-      loadStats();
-    }
+    Alert.alert(
+      'Reset Statistics',
+      'Are you sure you want to reset all statistics? This cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            await resetGameStats();
+            loadStats();
+          },
+        },
+      ]
+    );
   };
 
   const getWinPercentage = () => {
