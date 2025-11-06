@@ -234,7 +234,10 @@ export class AdvancedRenderer {
     material.metallic = 0.0;
 
     // Make it glow slightly when hit
-    this.glowLayer?.addIncludedOnlyMesh(material.getBindedMeshes()[0]);
+    const bindedMeshes = material.getBindedMeshes();
+    if (bindedMeshes.length > 0 && bindedMeshes[0] instanceof Mesh) {
+      this.glowLayer?.addIncludedOnlyMesh(bindedMeshes[0]);
+    }
 
     return material;
   }
