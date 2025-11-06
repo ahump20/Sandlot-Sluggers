@@ -1,7 +1,30 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { saveGameStats, saveHighScore } from '../utils/storage';
 
 const GameOverScreen = ({ result, onPlayAgain, onMainMenu }) => {
+  useEffect(() => {
+    if (result) {
+      // Save game statistics
+      saveGameStats({
+        playerScore: result.playerScore,
+        playerWon: result.playerWon,
+        characterId: result.character.id,
+        stadiumId: result.stadium.id,
+      });
+      
+      // Save high score if applicable
+      if (result.playerScore > 0) {
+        saveHighScore({
+          score: result.playerScore,
+          characterName: result.character.name,
+          stadiumName: result.stadium.name,
+          date: new Date().toISOString(),
+        });
+      }
+    }
+  }, [result]);
+
   if (!result) {
     return (
       <View style={styles.container}>

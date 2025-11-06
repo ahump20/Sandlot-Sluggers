@@ -5,6 +5,7 @@ import CharacterSelectScreen from './src/screens/CharacterSelectScreen';
 import StadiumSelectScreen from './src/screens/StadiumSelectScreen';
 import GameplayScreen from './src/screens/GameplayScreen';
 import GameOverScreen from './src/screens/GameOverScreen';
+import StatsScreen from './src/screens/StatsScreen';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('menu');
@@ -42,6 +43,8 @@ export default function App() {
     switch (currentScreen) {
       case 'menu':
         return <MainMenuScreen onNavigate={navigateToScreen} />;
+      case 'stats':
+        return <StatsScreen onBack={() => navigateToScreen('menu')} />;
       case 'character':
         return <CharacterSelectScreen onSelect={handleCharacterSelect} />;
       case 'stadium':

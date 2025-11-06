@@ -19,7 +19,7 @@ const MainMenuScreen = ({ onNavigate }) => {
 
         <TouchableOpacity
           style={[styles.menuButton, styles.secondaryButton]}
-          onPress={() => alert('Coming soon!')}
+          onPress={() => onNavigate('stats')}
         >
           <Text style={styles.menuButtonText}>📊 View Stats</Text>
         </TouchableOpacity>
