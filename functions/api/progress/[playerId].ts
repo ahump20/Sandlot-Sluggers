@@ -66,7 +66,7 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
     totalHits: updates.totalHits ?? existing?.total_hits ?? 0,
     totalHomeRuns: updates.totalHomeRuns ?? existing?.total_home_runs ?? 0,
     unlockedCharacters: updates.unlockedCharacters ?? parseStoredArray(existing?.unlocked_characters) ?? [],
-    unlockedStadiums: updates.unlockedStadiums ?? parseStoredArray(existing?.unlocked_stadiums) ?? [],
+    unlockedStadiums: updates.unlockedStadiums ?? parseStoredArray(existing?.unlocked_stadiums),
     currentLevel: updates.currentLevel ?? existing?.current_level ?? 1,
     experience: updates.experience ?? existing?.experience ?? 0
   };
