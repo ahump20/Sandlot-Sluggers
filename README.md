@@ -133,6 +133,44 @@ Sandlot-Sluggers/
 └── package.json
 ```
 
+## 📊 Analytics API & Landing Page
+
+The project now includes a comprehensive analytics API and a modern landing page for blazesportsintel.com/sandlot-sluggers.
+
+### Analytics API Endpoints
+
+Four new API endpoints provide real-time game statistics:
+
+- **`GET /api/stats/global`** - Overall game statistics (total players, games played, home runs, etc.)
+- **`GET /api/stats/leaderboard?limit=10&stat=wins`** - Top players by various stats
+- **`GET /api/stats/characters`** - Character unlock rates and usage statistics
+- **`GET /api/stats/stadiums`** - Stadium popularity and usage data
+
+All endpoints implement KV caching (60-180s) and return fallback data on error. See [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) for complete details.
+
+### Landing Page
+
+A Next.js 14 landing page is available in the `landing-page/` directory featuring:
+
+- **Hero Section** - Game introduction with CTA buttons
+- **Live Stats Dashboard** - Real-time statistics from the API
+- **Character Roster** - Interactive showcase with detailed stats
+- **Stadium Explorer** - Browse all 5 unique stadiums
+- **Leaderboard** - Top 10 players with rankings
+- **Features Grid** - Highlight game features and tech stack
+
+#### Quick Start (Landing Page)
+
+```bash
+cd landing-page
+npm install
+cp .env.example .env.local
+# Edit .env.local with your API URL
+npm run dev
+```
+
+See [landing-page/README.md](./landing-page/README.md) for deployment instructions.
+
 ## 🎯 How to Play
 
 ### Pitching
@@ -239,10 +277,11 @@ This project uses **100% original intellectual property**:
 - [ ] 3D models are placeholder capsules/spheres - need actual character models
 - [ ] Camera doesn't follow ball during flight
 - [ ] No AI opponents - pitcher auto-pitches, but no smart fielding/baserunning
-- [ ] Leaderboard API not implemented (only progress tracking works)
+- [x] ~~Leaderboard API not implemented~~ ✅ **COMPLETED** - Analytics API with leaderboard, characters, and stadium stats
 - [ ] No sound effects or music
 - [ ] No team selection screen
 - [ ] Icons are placeholders (need actual PNG icons)
+- [x] ~~Landing page for blazesportsintel.com~~ ✅ **COMPLETED** - Next.js landing page with live stats dashboard
 
 ## 📈 Roadmap
 
