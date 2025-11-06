@@ -1,0 +1,17 @@
+name = "blazesportsintel-api"
+main = "apps/api/src/index.ts"
+compatibility_date = "2024-05-13"
+workers_dev = true
+
+[vars]
+CORS_ALLOWED_ORIGIN = "*"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "blazesportsintel"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[kv_namespaces]]
+binding = "SPORTS_CACHE"
+id = "00000000000000000000000000000000"
+preview_id = "00000000000000000000000000000000"

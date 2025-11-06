@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+a {
+  @apply text-blaze-300 transition-colors hover:text-blaze-100;
+}
+
+.container {
+  @apply mx-auto max-w-5xl px-6;
+}
