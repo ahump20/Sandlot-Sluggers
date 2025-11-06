@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd landing-page && npm install && npm run build",
+  "outputDirectory": "landing-page/.next",
+  "framework": "nextjs",
+  "installCommand": "cd landing-page && npm install",
+  "devCommand": "cd landing-page && npm run dev",
+  "regions": ["iad1"],
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://sandlot-sluggers.pages.dev"
+  }
+}

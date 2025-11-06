@@ -1,0 +1,16 @@
+# Cloudflare Development Variables
+# Copy this to .dev.vars for local development
+
+# Database IDs (get from wrangler commands)
+D1_DATABASE_ID=your-d1-database-id
+KV_NAMESPACE_ID=your-kv-namespace-id
+R2_BUCKET_NAME=sandlot-sluggers-assets-dev
+
+# API Configuration
+API_BASE_URL=http://localhost:8787
+CORS_ORIGIN=http://localhost:5173
+
+# Feature Flags
+ENABLE_ANALYTICS=true
+ENABLE_LEADERBOARD=true
+DEBUG_MODE=true
