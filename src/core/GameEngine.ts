@@ -112,9 +112,7 @@ export class GameEngine {
 
     new HemisphericLight("light", new Vector3(0, 1, 0), this.scene);
 
-    this.initializePhysics();
-    this.createField();
-    this.setupInputHandlers();
+    void this.initialize();
 
     this.engine.runRenderLoop(() => {
       this.scene.render();
@@ -124,6 +122,12 @@ export class GameEngine {
     window.addEventListener("resize", () => {
       this.engine.resize();
     });
+  }
+
+  private async initialize(): Promise<void> {
+    await this.initializePhysics();
+    this.createField();
+    this.setupInputHandlers();
   }
 
   private async initializePhysics(): Promise<void> {
