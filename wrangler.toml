@@ -1,19 +1,44 @@
-name = "blaze-backyard-baseball"
+name = "sandlot-sluggers"
 compatibility_date = "2024-11-06"
 pages_build_output_dir = "dist"
 
-# D1 Database binding
-[[d1_databases]]
+# Main production site
+[env.production]
+name = "sandlot-sluggers"
+
+# D1 Database binding for player progression
+[[env.production.d1_databases]]
 binding = "DB"
-database_name = "blaze-baseball-db"
-database_id = "TBD" # Replace with actual database ID after creation
+database_name = "sandlot-sluggers-db"
+database_id = "TBD" # Run: wrangler d1 create sandlot-sluggers-db
 
-# KV namespace for leaderboards
-[[kv_namespaces]]
+# KV namespace for caching and leaderboards
+[[env.production.kv_namespaces]]
 binding = "KV"
-id = "TBD" # Replace with actual KV namespace ID after creation
+id = "TBD" # Run: wrangler kv:namespace create "SLUGGERS_KV"
 
-# R2 bucket for 3D models and textures
-[[r2_buckets]]
+# R2 bucket for 3D models, textures, and audio
+[[env.production.r2_buckets]]
 binding = "ASSETS"
-bucket_name = "blaze-baseball-assets"
+bucket_name = "sandlot-sluggers-assets"
+
+# Analytics Engine for gameplay telemetry
+[[env.production.analytics_engine_datasets]]
+binding = "ANALYTICS"
+
+# Development environment
+[env.development]
+name = "sandlot-sluggers-dev"
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "sandlot-sluggers-db-dev"
+database_id = "TBD"
+
+[[env.development.kv_namespaces]]
+binding = "KV"
+id = "TBD"
+
+[[env.development.r2_buckets]]
+binding = "ASSETS"
+bucket_name = "sandlot-sluggers-assets-dev"
