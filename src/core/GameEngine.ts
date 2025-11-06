@@ -74,6 +74,7 @@ export class GameEngine {
   private isPitching: boolean = false;
   private isBatting: boolean = false;
   private onStateChange: (state: GameState) => void;
+  private isReady: boolean = false;
 
   constructor(config: GameConfig) {
     this.engine = new Engine(config.canvas, true, {
@@ -114,11 +115,6 @@ export class GameEngine {
 
     void this.initialize();
 
-    this.engine.runRenderLoop(() => {
-      this.scene.render();
-      this.update();
-    });
-
     window.addEventListener("resize", () => {
       this.engine.resize();
     });
@@ -128,6 +124,13 @@ export class GameEngine {
     await this.initializePhysics();
     this.createField();
     this.setupInputHandlers();
+    this.isReady = true;
+
+    // Start render loop only after initialization is complete
+    this.engine.runRenderLoop(() => {
+      this.scene.render();
+      this.update();
+    });
   }
 
   private async initializePhysics(): Promise<void> {
@@ -296,7 +299,7 @@ export class GameEngine {
   }
 
   public startPitch(): void {
-    if (this.isPitching || !this.pitcher) return;
+    if (!this.isReady || this.isPitching || !this.pitcher) return;
 
     this.isPitching = true;
     this.createBall();
