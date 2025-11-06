@@ -64,5 +64,11 @@ pitchButton?.addEventListener("click", () => {
   game.startPitch();
 });
 
-// Initialize the game
-initializeGame();
+// Initialize the game with error handling
+(async () => {
+  try {
+    await initializeGame();
+  } catch (error) {
+    console.error('Failed to initialize game:', error);
+  }
+})();
