@@ -15,12 +15,25 @@ if (!currentPlayerId) {
 }
 // TODO: Use currentPlayerId to fetch/save player progress
 
-const game = new GameEngine({
-  canvas,
-  onGameStateChange: (state) => {
-    updateUI(state);
+let game: GameEngine;
+
+async function initializeGame() {
+  game = await GameEngine.create({
+    canvas,
+    onGameStateChange: (state) => {
+      updateUI(state);
+    }
+  });
+
+  // Load initial players
+  const randomPitcher = ORIGINAL_CHARACTERS.find(c => c.position === "P");
+  const randomBatter = ORIGINAL_CHARACTERS[0];
+
+  if (randomPitcher) {
+    game.loadPlayer(randomPitcher, new Vector3(0, 0, 9), "pitcher");
   }
-});
+  game.loadPlayer(randomBatter, new Vector3(0, 0, 0), "batter");
+}
 
 // UI initialization
 const scoreDisplay = document.getElementById("score");
@@ -51,11 +64,5 @@ pitchButton?.addEventListener("click", () => {
   game.startPitch();
 });
 
-// Load initial players
-const randomPitcher = ORIGINAL_CHARACTERS.find(c => c.position === "P");
-const randomBatter = ORIGINAL_CHARACTERS[0];
-
-if (randomPitcher) {
-  game.loadPlayer(randomPitcher, new Vector3(0, 0, 9), "pitcher");
-}
-game.loadPlayer(randomBatter, new Vector3(0, 0, 0), "batter");
+// Initialize the game
+initializeGame();
