@@ -45,6 +45,7 @@ export class ProgressionAPI {
       runsScored: number;
       hitsRecorded: number;
       homeRunsHit: number;
+      playerName?: string;
     }
   ): Promise<PlayerProgress> {
     const response = await fetch(`${this.baseUrl}/game-result`, {

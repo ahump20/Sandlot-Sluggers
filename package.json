@@ -6,7 +6,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "deploy": "wrangler pages deploy dist"
+    "deploy": "wrangler pages deploy dist",
+    "cf:d1:apply": "wrangler d1 execute blaze-baseball-db --file=./schema.sql",
+    "cf:pages:dev": "wrangler pages dev dist --local"
   },
   "dependencies": {
     "@babylonjs/core": "^7.31.0",

@@ -10,6 +10,7 @@ A mobile-first baseball game built with Babylon.js, WebGPU, and Cloudflare's edg
 - **5 Unique Stadiums**: Dusty Acres, Frostbite Field, Treehouse Park, Rooftop Rally, Beach Bash
 - **Progressive Unlocks**: Secret characters including "Comet Carter" and "Blaze" the dog
 - **Cross-Platform Persistence**: Cloudflare D1 for progression, KV for leaderboards
+- **Edge Progression API**: Cloudflare Pages Functions with D1-backed GET/PATCH/POST endpoints for player state and game results
 - **PWA Support**: Install as a mobile app for fullscreen experience
 
 ## 🏗️ Architecture
@@ -67,6 +68,8 @@ A mobile-first baseball game built with Babylon.js, WebGPU, and Cloudflare's edg
 5. **Initialize Database Schema**
    ```bash
    wrangler d1 execute blaze-baseball-db --file=./schema.sql
+   # or
+   npm run cf:d1:apply
    ```
 
 6. **Create KV Namespace** (for leaderboards)
@@ -120,10 +123,13 @@ Sandlot-Sluggers/
 │   └── main.ts                 # Entry point
 ├── functions/
 │   └── api/
+│       ├── game-result.ts      # Cloudflare Pages Function for posting game outcomes
 │       └── progress/
-│           └── [playerId].ts   # Cloudflare Pages Function
+│           ├── [playerId].ts   # Cloudflare Pages Function for CRUD
+│           └── utils.ts        # Shared helpers for D1/KV access
 ├── public/
 │   ├── manifest.json           # PWA manifest
+│   ├── sw.js                   # Offline cache & install prompt
 │   └── icons/                  # App icons (add 192x192 and 512x512 PNGs)
 ├── index.html                  # Main HTML file
 ├── schema.sql                  # D1 database schema

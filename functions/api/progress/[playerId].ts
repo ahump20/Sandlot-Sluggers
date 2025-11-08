@@ -1,139 +1,93 @@
+import { ensurePlayerRow, fetchPlayerRow, jsonResponse, PlayerProgress, rowToProgress, withCorsHeaders } from "./utils";
+
 interface Env {
   DB: D1Database;
-  KV: KVNamespace;
+  KV?: KVNamespace;
 }
 
-export const onRequestGet: PagesFunction<Env> = async (context) => {
-  const { playerId } = context.params;
+function badRequest(message: string): Response {
+  return jsonResponse({ error: message }, { status: 400 });
+}
 
-  const result = await context.env.DB.prepare(
-    "SELECT * FROM player_progress WHERE player_id = ?"
-  ).bind(playerId).first();
-
-  if (!result) {
-    return new Response(JSON.stringify({
-      playerId,
-      gamesPlayed: 0,
-      wins: 0,
-      losses: 0,
-      totalRuns: 0,
-      totalHits: 0,
-      totalHomeRuns: 0,
-      unlockedCharacters: [],
-      unlockedStadiums: [],
-      currentLevel: 1,
-      experience: 0
-    }), {
-      headers: { "Content-Type": "application/json" }
-    });
-  }
-
-  return new Response(JSON.stringify(result), {
-    headers: { "Content-Type": "application/json" }
-  });
+export const onRequestOptions: PagesFunction<Env> = async () => {
+  return new Response(null, withCorsHeaders({ status: 204 }));
 };
 
-export const onRequestPatch: PagesFunction<Env> = async (context) => {
-  const { playerId } = context.params;
-  const updates = await context.request.json() as any;
-
-  const existing = await context.env.DB.prepare(
-    "SELECT * FROM player_progress WHERE player_id = ?"
-  ).bind(playerId).first();
-
-  const parseStoredArray = (value: unknown): any[] => {
-    if (Array.isArray(value)) {
-      return value;
-    }
-
-    if (typeof value === "string") {
-      try {
-        const parsed = JSON.parse(value);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return [];
-      }
-    }
-
-    return [];
-  };
-
-  const merged = {
-    gamesPlayed: updates.gamesPlayed ?? existing?.games_played ?? 0,
-    wins: updates.wins ?? existing?.wins ?? 0,
-    losses: updates.losses ?? existing?.losses ?? 0,
-    totalRuns: updates.totalRuns ?? existing?.total_runs ?? 0,
-    totalHits: updates.totalHits ?? existing?.total_hits ?? 0,
-    totalHomeRuns: updates.totalHomeRuns ?? existing?.total_home_runs ?? 0,
-    unlockedCharacters: updates.unlockedCharacters ?? parseStoredArray(existing?.unlocked_characters) ?? [],
-    unlockedStadiums: updates.unlockedStadiums ?? parseStoredArray(existing?.unlocked_stadiums),
-    currentLevel: updates.currentLevel ?? existing?.current_level ?? 1,
-    experience: updates.experience ?? existing?.experience ?? 0
-  };
-
-  if (existing) {
-    await context.env.DB.prepare(`
-      UPDATE player_progress
-      SET games_played = ?,
-          wins = ?,
-          losses = ?,
-          total_runs = ?,
-          total_hits = ?,
-          total_home_runs = ?,
-          unlocked_characters = ?,
-          unlocked_stadiums = ?,
-          current_level = ?,
-          experience = ?,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE player_id = ?
-    `).bind(
-      merged.gamesPlayed,
-      merged.wins,
-      merged.losses,
-      merged.totalRuns,
-      merged.totalHits,
-      merged.totalHomeRuns,
-      JSON.stringify(merged.unlockedCharacters),
-      JSON.stringify(merged.unlockedStadiums),
-      merged.currentLevel,
-      merged.experience,
-      playerId
-    ).run();
-  } else {
-    await context.env.DB.prepare(`
-      INSERT INTO player_progress (
-        player_id,
-        games_played,
-        wins,
-        losses,
-        total_runs,
-        total_hits,
-        total_home_runs,
-        unlocked_characters,
-        unlocked_stadiums,
-        current_level,
-        experience
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      playerId,
-      merged.gamesPlayed,
-      merged.wins,
-      merged.losses,
-      merged.totalRuns,
-      merged.totalHits,
-      merged.totalHomeRuns,
-      JSON.stringify(merged.unlockedCharacters),
-      JSON.stringify(merged.unlockedStadiums),
-      merged.currentLevel,
-      merged.experience
-    ).run();
+export const onRequestGet: PagesFunction<Env> = async ({ params, env }) => {
+  const playerId = params.playerId as string | undefined;
+  if (!playerId) {
+    return badRequest("playerId is required");
   }
 
-  const result = await context.env.DB.prepare(
-    "SELECT * FROM player_progress WHERE player_id = ?"
-  ).bind(playerId).first();
+  const row = await fetchPlayerRow(env.DB, playerId);
+  const progress = rowToProgress(row);
 
-  return new Response(JSON.stringify(result), {
-    headers: { "Content-Type": "application/json" }
-  });
+  if (progress) {
+    return jsonResponse(progress);
+  }
+
+  const initializedRow = await ensurePlayerRow(env.DB, playerId);
+  return jsonResponse(rowToProgress(initializedRow)!);
+};
+
+export const onRequestPatch: PagesFunction<Env> = async ({ params, request, env }) => {
+  const playerId = params.playerId as string | undefined;
+  if (!playerId) {
+    return badRequest("playerId is required");
+  }
+
+  let payload: Partial<PlayerProgress>;
+  try {
+    payload = await request.json<Partial<PlayerProgress>>();
+  } catch {
+    return badRequest("Invalid JSON payload");
+  }
+
+  await ensurePlayerRow(env.DB, playerId);
+
+  const updates: string[] = [];
+  const values: unknown[] = [];
+
+  const numericMappings: Record<keyof PlayerProgress, string> = {
+    playerId: "player_id",
+    gamesPlayed: "games_played",
+    wins: "wins",
+    losses: "losses",
+    totalRuns: "total_runs",
+    totalHits: "total_hits",
+    totalHomeRuns: "total_home_runs",
+    unlockedCharacters: "unlocked_characters",
+    unlockedStadiums: "unlocked_stadiums",
+    currentLevel: "current_level",
+    experience: "experience"
+  };
+
+  for (const [key, value] of Object.entries(payload) as [keyof PlayerProgress, unknown][]) {
+    if (value === undefined || key === "playerId") {
+      continue;
+    }
+
+    const column = numericMappings[key];
+    if (key === "unlockedCharacters" || key === "unlockedStadiums") {
+      updates.push(`${column} = ?`);
+      values.push(JSON.stringify(value));
+    } else if (typeof value === "number") {
+      updates.push(`${column} = ?`);
+      values.push(value);
+    }
+  }
+
+  if (updates.length === 0) {
+    return badRequest("No valid fields supplied for update");
+  }
+
+  updates.push("updated_at = CURRENT_TIMESTAMP");
+
+  const statement = `UPDATE player_progress SET ${updates.join(", ")} WHERE player_id = ?`;
+  values.push(playerId);
+
+  await env.DB.prepare(statement).bind(...values).run();
+
+  const updated = await fetchPlayerRow(env.DB, playerId);
+  return jsonResponse(rowToProgress(updated)!);
 };

@@ -13,6 +13,7 @@ import {
   Mesh,
   AbstractMesh
 } from "@babylonjs/core";
+import { WebGPUEngine } from "@babylonjs/core/Engines/webgpuEngine";
 import HavokPhysics from "@babylonjs/havok";
 
 export interface GameConfig {
@@ -61,9 +62,9 @@ export interface Stadium {
 }
 
 export class GameEngine {
-  private engine: Engine;
-  private scene: Scene;
-  private camera: ArcRotateCamera;
+  private engine!: Engine;
+  private scene!: Scene;
+  private camera!: ArcRotateCamera;
   private gameState: GameState;
   private havokInstance: any;
   private ball: Mesh | null = null;
@@ -74,13 +75,12 @@ export class GameEngine {
   private isPitching: boolean = false;
   private isBatting: boolean = false;
   private onStateChange: (state: GameState) => void;
+  private readonly canvas: HTMLCanvasElement;
+  private readonly ready: Promise<void>;
+  private initialized = false;
 
-  constructor(config: GameConfig) {
-    this.engine = new Engine(config.canvas, true, {
-      adaptToDeviceRatio: true,
-      powerPreference: "high-performance"
-    });
-    this.scene = new Scene(this.engine);
+  private constructor(config: GameConfig) {
+    this.canvas = config.canvas;
     this.onStateChange = config.onGameStateChange;
 
     this.gameState = {
@@ -96,6 +96,23 @@ export class GameEngine {
       strikes: 0
     };
 
+    this.ready = this.bootstrap();
+  }
+
+  public static async create(config: GameConfig): Promise<GameEngine> {
+    const engine = new GameEngine(config);
+    await engine.ready;
+    return engine;
+  }
+
+  public async waitForReady(): Promise<void> {
+    await this.ready;
+  }
+
+  private async bootstrap(): Promise<void> {
+    this.engine = await this.createEngine();
+    this.scene = new Scene(this.engine);
+
     this.camera = new ArcRotateCamera(
       "camera",
       -Math.PI / 2,
@@ -104,7 +121,7 @@ export class GameEngine {
       new Vector3(0, 0, 0),
       this.scene
     );
-    this.camera.attachControl(config.canvas, true);
+    this.camera.attachControl(this.canvas, true);
     this.camera.lowerRadiusLimit = 20;
     this.camera.upperRadiusLimit = 60;
     this.camera.lowerBetaLimit = 0.1;
@@ -112,7 +129,7 @@ export class GameEngine {
 
     new HemisphericLight("light", new Vector3(0, 1, 0), this.scene);
 
-    void this.initialize();
+    await this.initialize();
 
     this.engine.runRenderLoop(() => {
       this.scene.render();
@@ -121,6 +138,28 @@ export class GameEngine {
 
     window.addEventListener("resize", () => {
       this.engine.resize();
+    });
+
+    this.initialized = true;
+  }
+
+  private async createEngine(): Promise<Engine> {
+    try {
+      if (await WebGPUEngine.IsSupportedAsync) {
+        const webGpuEngine = new WebGPUEngine(this.canvas, {
+          adaptToDeviceRatio: true,
+          powerPreference: "high-performance"
+        });
+        await webGpuEngine.initAsync();
+        return webGpuEngine as unknown as Engine;
+      }
+    } catch (error) {
+      console.warn("Falling back to WebGL Engine", error);
+    }
+
+    return new Engine(this.canvas, true, {
+      adaptToDeviceRatio: true,
+      powerPreference: "high-performance"
     });
   }
 
@@ -227,6 +266,8 @@ export class GameEngine {
   }
 
   public async loadPlayer(player: Player, position: Vector3, role: "pitcher" | "batter"): Promise<void> {
+    await this.waitForReady();
+
     // Simplified player representation - replace with actual model loading
     const playerMesh = MeshBuilder.CreateCapsule(`${role}_${player.id}`, {
       radius: 0.5,
@@ -296,7 +337,7 @@ export class GameEngine {
   }
 
   public startPitch(): void {
-    if (this.isPitching || !this.pitcher) return;
+    if (!this.initialized || this.isPitching || !this.pitcher) return;
 
     this.isPitching = true;
     this.createBall();
