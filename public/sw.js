@@ -38,7 +38,11 @@ self.addEventListener("fetch", (event) => {
         if (cached) {
           return cached;
         }
-        return caches.match("/index.html");
+        const fallback = await caches.match("/index.html");
+        if (fallback) {
+          return fallback;
+        }
+        return new Response("Not found", { status: 404, statusText: "Not Found", headers: { "Content-Type": "text/plain" } });
       })
   );
 });
