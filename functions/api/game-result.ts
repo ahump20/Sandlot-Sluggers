@@ -80,17 +80,32 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     .run();
 
   if (payload.playerName) {
+    // Upsert 'wins' stat
     await env.DB
       .prepare(
         `INSERT INTO leaderboard (player_id, player_name, stat_type, stat_value)
-         VALUES (?, ?, 'wins', ?),
-                (?, ?, 'experience', ?)
-        `
+         VALUES (?, ?, 'wins', ?)
+         ON CONFLICT(player_id, stat_type) DO UPDATE SET
+           player_name = excluded.player_name,
+           stat_value = excluded.stat_value`
       )
       .bind(
         payload.playerId,
         payload.playerName,
-        updatedProgress.wins,
+        updatedProgress.wins
+      )
+      .run();
+
+    // Upsert 'experience' stat
+    await env.DB
+      .prepare(
+        `INSERT INTO leaderboard (player_id, player_name, stat_type, stat_value)
+         VALUES (?, ?, 'experience', ?)
+         ON CONFLICT(player_id, stat_type) DO UPDATE SET
+           player_name = excluded.player_name,
+           stat_value = excluded.stat_value`
+      )
+      .bind(
         payload.playerId,
         payload.playerName,
         updatedProgress.experience
