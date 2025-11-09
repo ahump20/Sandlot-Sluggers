@@ -87,7 +87,10 @@ async function bootstrap(): Promise<void> {
   await refreshProgress();
 }
 
-void bootstrap();
+bootstrap().catch((error) => {
+  console.error("Game initialization failed", error);
+  // Optionally, display a user-friendly message in the UI
+});
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
