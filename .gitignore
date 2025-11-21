@@ -35,6 +35,8 @@ pnpm-debug.log*
 
 # TypeScript
 *.tsbuildinfo
+# Compiled JS from tsconfig.canvas.json
+src/*.js
 
 # Testing
 coverage/
