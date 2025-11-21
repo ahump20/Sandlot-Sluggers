@@ -1,12 +1,15 @@
 export class Renderer {
+    private readonly CANVAS_WIDTH: number = 800;
+    private readonly CANVAS_HEIGHT: number = 600;
+    
     ctx: CanvasRenderingContext2D;
     width: number;
     height: number;
 
     constructor(canvas: HTMLCanvasElement) {
         this.ctx = canvas.getContext('2d')!;
-        this.width = canvas.width = 800;
-        this.height = canvas.height = 600;
+        this.width = canvas.width = this.CANVAS_WIDTH;
+        this.height = canvas.height = this.CANVAS_HEIGHT;
     }
 
     clear(): void {

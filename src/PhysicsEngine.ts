@@ -6,6 +6,7 @@ export interface Vector2 {
 export class PhysicsEngine {
     gravity: number = 0.5;
     friction: number = 0.98;
+    private readonly GROUND_LEVEL: number = 500;
 
     updateBall(position: Vector2, velocity: Vector2): { position: Vector2, velocity: Vector2 } {
         // Apply gravity
@@ -19,9 +20,9 @@ export class PhysicsEngine {
         position.x += velocity.x;
         position.y += velocity.y;
 
-        // Simple ground bounce (assuming y=500 is ground)
-        if (position.y > 500) {
-            position.y = 500;
+        // Simple ground bounce
+        if (position.y > this.GROUND_LEVEL) {
+            position.y = this.GROUND_LEVEL;
             velocity.y *= -0.7; // Bounce with energy loss
         }
 
