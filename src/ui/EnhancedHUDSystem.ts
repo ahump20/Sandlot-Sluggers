@@ -91,7 +91,7 @@ export interface HitTrajectoryOverlay {
     exitVelocity: number;
     launchAngle: number;
     projectedDistance: number;
-    hang Time: number;
+    hangTime: number;
     isHomeRun: boolean;
 }
 
@@ -187,7 +187,7 @@ export interface PitchingGrid {
 export interface BattingAnalysis {
     swingTiming: 'early' | 'perfect' | 'late';
     contactQuality: number; // 0-100
-    plateApp discipline: number; // 0-100
+    plateAppDiscipline: number; // 0-100
     recommendedAdjustment: string;
 }
 

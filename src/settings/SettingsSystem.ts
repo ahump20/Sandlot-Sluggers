@@ -117,7 +117,7 @@ export interface GameplaySettings {
 
     // Fielding
     fieldingAssists: {
-        autoFielder Selection: boolean;
+        autoFielderSelection: boolean;
         throwingArcs: boolean;
         catchRadar: boolean;
         autoThrow: boolean;
