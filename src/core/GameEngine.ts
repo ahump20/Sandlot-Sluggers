@@ -790,6 +790,10 @@ export class GameEngine {
     }
 
     console.log("Game ended:", message);
+    
+    // Emit final game state to observers
+    this.updateGameState();
+    
     // TODO: Send final stats to API
   }
 
