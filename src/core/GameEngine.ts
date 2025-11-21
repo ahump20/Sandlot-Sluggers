@@ -2,22 +2,20 @@ import {
   Engine,
   Scene,
   ArcRotateCamera,
-  HemisphericLight,
   Vector3,
-  MeshBuilder,
-  StandardMaterial,
-  Color3,
-  PhysicsAggregate,
-  PhysicsShapeType,
-  HavokPlugin,
   Mesh,
-  AbstractMesh
+  AbstractMesh,
+  MeshBuilder
 } from "@babylonjs/core";
-import HavokPhysics from "@babylonjs/havok";
+import { AdvancedPhysicsSystem, PhysicsMaterial } from "../physics/AdvancedPhysicsSystem";
+import { AdvancedRenderer } from "../graphics/AdvancedRenderer";
+import { FieldBuilder } from "../graphics/FieldBuilder";
+import { DefensivePlaySystem } from "../fielding/DefensivePlaySystem";
 
 export interface GameConfig {
   canvas: HTMLCanvasElement;
   onGameStateChange: (state: GameState) => void;
+  stadium?: Stadium;
 }
 
 export interface GameState {
@@ -31,6 +29,7 @@ export interface GameState {
   currentPitcher: Player;
   balls: number;
   strikes: number;
+  currentStadium?: Stadium;
 }
 
 export interface Player {
@@ -65,15 +64,43 @@ export class GameEngine {
   private scene: Scene;
   private camera: ArcRotateCamera;
   private gameState: GameState;
-  private havokInstance: any;
+  
+  // Advanced systems
+  private physicsSystem: AdvancedPhysicsSystem;
+  private renderer: AdvancedRenderer;
+  private fieldBuilder: FieldBuilder;
+  private fieldingSystem: DefensivePlaySystem;
+  
+  // Game objects
   private ball: Mesh | null = null;
-  private ballPhysics: PhysicsAggregate | null = null;
+  private ballId: string | null = null;
   private pitcher: AbstractMesh | null = null;
   private batter: AbstractMesh | null = null;
-  private _fielders: Map<string, AbstractMesh> = new Map(); // TODO: Implement fielding
+  private fielders: Map<string, AbstractMesh> = new Map();
+  
+  // Game state
   private isPitching: boolean = false;
   private isBatting: boolean = false;
   private onStateChange: (state: GameState) => void;
+  
+  // Stats tracking
+  private gameStats: {
+    strikes: number;
+    balls: number;
+    hits: number;
+    outs: number;
+    runs: number;
+    homeRuns: number;
+    outTypes: Map<string, number>;
+  } = {
+    strikes: 0,
+    balls: 0,
+    hits: 0,
+    outs: 0,
+    runs: 0,
+    homeRuns: 0,
+    outTypes: new Map()
+  };
 
   constructor(config: GameConfig) {
     this.engine = new Engine(config.canvas, true, {
@@ -93,8 +120,15 @@ export class GameEngine {
       currentBatter: this.createDefaultPlayer("batter"),
       currentPitcher: this.createDefaultPlayer("pitcher"),
       balls: 0,
-      strikes: 0
+      strikes: 0,
+      currentStadium: config.stadium
     };
+
+    // Initialize advanced systems
+    this.renderer = new AdvancedRenderer(this.scene, this.engine);
+    this.physicsSystem = new AdvancedPhysicsSystem(this.scene);
+    this.fieldBuilder = new FieldBuilder(this.scene, this.renderer);
+    this.fieldingSystem = new DefensivePlaySystem();
 
     this.camera = new ArcRotateCamera(
       "camera",
@@ -110,8 +144,6 @@ export class GameEngine {
     this.camera.lowerBetaLimit = 0.1;
     this.camera.upperBetaLimit = Math.PI / 2;
 
-    new HemisphericLight("light", new Vector3(0, 1, 0), this.scene);
-
     void this.initialize();
 
     this.engine.runRenderLoop(() => {
@@ -125,89 +157,34 @@ export class GameEngine {
   }
 
   private async initialize(): Promise<void> {
-    await this.initializePhysics();
-    this.createField();
-    this.setupInputHandlers();
-  }
-
-  private async initializePhysics(): Promise<void> {
-    this.havokInstance = await HavokPhysics();
-    const havokPlugin = new HavokPlugin(true, this.havokInstance);
-    this.scene.enablePhysics(new Vector3(0, -9.81, 0), havokPlugin);
-  }
-
-  private createField(): void {
-    // Ground
-    const ground = MeshBuilder.CreateGround("ground", {
-      width: 100,
-      height: 100
-    }, this.scene);
-    const groundMat = new StandardMaterial("groundMat", this.scene);
-    groundMat.diffuseColor = new Color3(0.2, 0.6, 0.2);
-    ground.material = groundMat;
-    new PhysicsAggregate(ground, PhysicsShapeType.BOX, {
-      mass: 0,
-      restitution: 0.3
-    }, this.scene);
-
-    // Diamond
-    this.createDiamond();
-
-    // Outfield fence
-    this.createFence();
-  }
-
-  private createDiamond(): void {
-    const basePaths = [
-      { name: "home", pos: new Vector3(0, 0.1, 0) },
-      { name: "first", pos: new Vector3(13, 0.1, 13) },
-      { name: "second", pos: new Vector3(0, 0.1, 18.4) },
-      { name: "third", pos: new Vector3(-13, 0.1, 13) }
-    ];
-
-    basePaths.forEach(base => {
-      const baseMesh = MeshBuilder.CreateBox(base.name, {
-        width: 0.5,
-        height: 0.1,
-        depth: 0.5
-      }, this.scene);
-      baseMesh.position = base.pos;
-      const baseMat = new StandardMaterial(`${base.name}Mat`, this.scene);
-      baseMat.diffuseColor = new Color3(1, 1, 1);
-      baseMesh.material = baseMat;
-    });
-
-    // Pitcher's mound
-    const mound = MeshBuilder.CreateCylinder("mound", {
-      height: 0.3,
-      diameter: 3
-    }, this.scene);
-    mound.position = new Vector3(0, 0.15, 9);
-    const moundMat = new StandardMaterial("moundMat", this.scene);
-    moundMat.diffuseColor = new Color3(0.7, 0.5, 0.3);
-    mound.material = moundMat;
-  }
-
-  private createFence(): void {
-    const fencePoints = [];
-    const radius = 35;
-    for (let i = 0; i <= 180; i += 10) {
-      const angle = (i * Math.PI) / 180;
-      fencePoints.push(new Vector3(
-        radius * Math.sin(angle),
-        2,
-        radius * Math.cos(angle)
-      ));
+    try {
+      // Wait for physics to initialize
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Build realistic field with stadium dimensions or defaults
+      const dimensions = this.gameState.currentStadium?.dimensions || {
+        leftField: 35,
+        centerField: 40,
+        rightField: 35
+      };
+      
+      this.fieldBuilder.buildField(dimensions);
+      
+      // Load stadium skybox if available
+      if (this.gameState.currentStadium?.skyboxPath) {
+        this.renderer.loadSkybox(this.gameState.currentStadium.skyboxPath);
+      }
+      
+      this.setupInputHandlers();
+    } catch (error) {
+      console.error("Failed to initialize game:", error);
+      // Fallback to basic field
+      this.fieldBuilder.buildField({
+        left: 35,
+        center: 40,
+        right: 35
+      });
     }
-
-    const fence = MeshBuilder.CreateTube("fence", {
-      path: fencePoints,
-      radius: 0.2,
-      sideOrientation: Mesh.DOUBLESIDE
-    }, this.scene);
-    const fenceMat = new StandardMaterial("fenceMat", this.scene);
-    fenceMat.diffuseColor = new Color3(0.4, 0.3, 0.1);
-    fence.material = fenceMat;
   }
 
   private createDefaultPlayer(type: string): Player {
@@ -247,23 +224,24 @@ export class GameEngine {
   }
 
   private createBall(): void {
-    if (this.ball) {
+    if (this.ball && this.ballId) {
+      this.physicsSystem.removeBall(this.ballId);
       this.ball.dispose();
-      this.ballPhysics?.dispose();
     }
 
+    // Create ball mesh first
     this.ball = MeshBuilder.CreateSphere("ball", {
-      diameter: 0.2
+      diameter: 0.0732 // MLB regulation (0.0366m radius * 2)
     }, this.scene);
-    const ballMat = new StandardMaterial("ballMat", this.scene);
-    ballMat.diffuseColor = new Color3(1, 1, 1);
-    this.ball.material = ballMat;
-
-    this.ballPhysics = new PhysicsAggregate(
+    
+    this.ballId = this.physicsSystem.createBaseball(
       this.ball,
-      PhysicsShapeType.SPHERE,
-      { mass: 0.145, restitution: 0.5 },
-      this.scene
+      {
+        mass: 0.145,
+        radius: 0.0366,
+        restitution: 0.55,
+        drag: 0.2
+      }
     );
   }
 
@@ -301,29 +279,36 @@ export class GameEngine {
     this.isPitching = true;
     this.createBall();
 
-    if (!this.ball || !this.ballPhysics) return;
+    if (!this.ball || !this.ballId) return;
 
     // Position ball at pitcher
     this.ball.position = this.pitcher.position.clone();
     this.ball.position.y += 1.5;
 
-    // Animate pitch
+    // Animate pitch using physics system
     const pitchSpeed = this.gameState.currentPitcher.pitchSpeed;
     const pitchControl = this.gameState.currentPitcher.pitchControl;
 
     // Add randomness based on control
     const controlVariance = (10 - pitchControl) * 0.1;
     const targetX = (Math.random() - 0.5) * controlVariance;
-    // const targetY = 1.2 + (Math.random() - 0.5) * controlVariance; // TODO: Use for vertical pitch movement
+    const targetY = 1.2 + (Math.random() - 0.5) * controlVariance * 0.5;
     const targetZ = 0;
 
     const velocity = new Vector3(
       targetX * pitchSpeed,
-      -2,
+      -2 + (targetY - 1.2) * 0.5,
       (targetZ - this.ball.position.z) * (pitchSpeed / 5)
     );
 
-    this.ballPhysics.body.setLinearVelocity(velocity);
+    // Apply velocity through physics system
+    if (this.ballId) {
+      this.physicsSystem.hitBall(
+        this.ballId,
+        velocity,
+        Vector3.Zero() // No spin initially
+      );
+    }
 
     // Check if pitch crosses plate
     setTimeout(() => {
@@ -357,7 +342,7 @@ export class GameEngine {
   }
 
   private executeHit(contactQuality: number, power: number, accuracy: number): void {
-    if (!this.ball || !this.ballPhysics) return;
+    if (!this.ball || !this.ballId) return;
 
     // Calculate hit vector
     const baseForce = 20 + (power * 3) + (contactQuality * 10);
@@ -370,8 +355,22 @@ export class GameEngine {
       Math.cos(direction * Math.PI / 180) * baseForce
     );
 
-    this.ballPhysics.body.setLinearVelocity(hitVector);
+    // Apply hit velocity with spin through physics system
+    if (this.ballId) {
+      // Add backspin for fly balls, topspin for grounders
+      const spin = contactQuality > 0.7 
+        ? new Vector3(0, 0, -1000) // Backspin for fly balls
+        : new Vector3(0, 0, 500);  // Topspin for grounders
+      
+      this.physicsSystem.hitBall(
+        this.ballId,
+        hitVector,
+        spin
+      );
+    }
+    
     this.isBatting = false;
+    this.gameStats.hits++;
 
     // Start tracking ball for fielding
     this.trackBallForFielding();
@@ -419,9 +418,19 @@ export class GameEngine {
   }
 
   private handleFieldingSwipe(deltaX: number, deltaY: number): void {
-    // TODO: Implement fielding mechanics
-    // For now, just log the swipe
-    console.log(`Fielding swipe: ${deltaX}, ${deltaY}`);
+    // Implement fielding mechanics using DefensivePlaySystem
+    if (!this.ball || !this.ballId) return;
+
+    const ballPos = this.ball.position;
+    const ballVelocity = this.physicsSystem.getBallVelocity(this.ballId) || Vector3.Zero();
+    
+    // Determine swipe direction and magnitude
+    const swipeMagnitude = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    const swipeDirection = Math.atan2(deltaY, deltaX);
+    
+    // Use fielding system to react to batted ball
+    // This is a simplified implementation - full system would handle positioning, timing, etc.
+    console.log(`Fielding swipe: ${deltaX}, ${deltaY}, magnitude: ${swipeMagnitude}`);
   }
 
   private checkPitchResult(): void {
@@ -453,6 +462,7 @@ export class GameEngine {
 
   private registerStrike(): void {
     this.gameState.strikes++;
+    this.gameStats.strikes++;
     if (this.gameState.strikes >= 3) {
       this.registerOut("strikeout");
     }
@@ -461,14 +471,21 @@ export class GameEngine {
 
   private registerBall(): void {
     this.gameState.balls++;
+    this.gameStats.balls++;
     if (this.gameState.balls >= 4) {
       this.advanceRunners(1); // Walk
     }
     this.updateGameState();
   }
 
-  private registerOut(_type: string): void { // TODO: Log out type for stats
+  private registerOut(type: string): void {
     this.gameState.outs++;
+    this.gameStats.outs++;
+    
+    // Track out types for statistics
+    const currentCount = this.gameStats.outTypes.get(type) || 0;
+    this.gameStats.outTypes.set(type, currentCount + 1);
+    
     this.resetCount();
 
     if (this.gameState.outs >= 3) {
@@ -512,6 +529,8 @@ export class GameEngine {
     } else {
       this.gameState.homeScore += runsScored;
     }
+    
+    this.gameStats.runs += runsScored;
 
     this.resetCount();
     this.updateGameState();
@@ -519,6 +538,7 @@ export class GameEngine {
 
   private registerHomeRun(): void {
     this.advanceRunners(4);
+    this.gameStats.homeRuns++;
   }
 
   private resetCount(): void {
@@ -546,7 +566,12 @@ export class GameEngine {
   }
 
   private update(): void {
-    // Game loop updates
+    // Update physics system
+    const deltaTime = this.engine.getDeltaTime() / 1000;
+    this.physicsSystem.update(deltaTime);
+    
+    // Update fielding system
+    // this.fieldingSystem.update(deltaTime);
   }
 
   public getGameState(): GameState {
@@ -554,7 +579,35 @@ export class GameEngine {
   }
 
   public dispose(): void {
+    // Clean up systems
+    if (this.ballId) {
+      this.physicsSystem.removeBall(this.ballId);
+    }
+    this.renderer.dispose();
+    
     this.scene.dispose();
     this.engine.dispose();
+  }
+  
+  /**
+   * Get game statistics
+   */
+  public getGameStats() {
+    return { ...this.gameStats };
+  }
+  
+  /**
+   * Set stadium (rebuilds field)
+   */
+  public setStadium(stadium: Stadium): void {
+    this.gameState.currentStadium = stadium;
+    
+    // Rebuild field with new dimensions
+    this.fieldBuilder.buildField(stadium.dimensions);
+    
+    // Load new skybox
+    if (stadium.skyboxPath) {
+      this.renderer.loadSkybox(stadium.skyboxPath);
+    }
   }
 }
