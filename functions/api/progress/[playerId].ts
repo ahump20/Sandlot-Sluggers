@@ -69,11 +69,16 @@ export const onRequestPatch: PagesFunction<Env> = async ({ params, request, env 
 
     const column = numericMappings[key];
     if (key === "unlockedCharacters" || key === "unlockedStadiums") {
+      if (!Array.isArray(value)) {
+        return badRequest(`Field '${key}' must be an array`);
+      }
       updates.push(`${column} = ?`);
       values.push(JSON.stringify(value));
     } else if (typeof value === "number") {
       updates.push(`${column} = ?`);
       values.push(value);
+    } else {
+      return badRequest(`Field '${key}' must be a number`);
     }
   }
 

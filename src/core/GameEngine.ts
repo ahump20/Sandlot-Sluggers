@@ -62,7 +62,7 @@ export interface Stadium {
 }
 
 export class GameEngine {
-  private engine!: Engine;
+  private engine!: Engine | WebGPUEngine;
   private scene!: Scene;
   private camera!: ArcRotateCamera;
   private gameState: GameState;
@@ -143,7 +143,7 @@ export class GameEngine {
     this.initialized = true;
   }
 
-  private async createEngine(): Promise<Engine> {
+  private async createEngine(): Promise<Engine | WebGPUEngine> {
     try {
       if (await WebGPUEngine.IsSupportedAsync) {
         const webGpuEngine = new WebGPUEngine(this.canvas, {
@@ -151,7 +151,7 @@ export class GameEngine {
           powerPreference: "high-performance"
         });
         await webGpuEngine.initAsync();
-        return webGpuEngine as unknown as Engine;
+        return webGpuEngine;
       }
     } catch (error) {
       console.warn("Falling back to WebGL Engine", error);
