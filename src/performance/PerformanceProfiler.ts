@@ -1,4 +1,4 @@
-import { Scene, Engine, Observable, SceneInstrumentation, EngineInstrumentation } from '@babylonjs/core';
+import { Scene, Engine, AbstractEngine, Observable, SceneInstrumentation, EngineInstrumentation } from '@babylonjs/core';
 
 /**
  * Performance metric types
@@ -119,7 +119,7 @@ export interface ProfilerMarker {
  */
 export class PerformanceProfiler {
     private scene: Scene;
-    private engine: Engine;
+    private engine: AbstractEngine;
 
     // Instrumentation
     private sceneInstrumentation: SceneInstrumentation;
@@ -262,13 +262,13 @@ export class PerformanceProfiler {
         // Frame time
         this.addSample(MetricType.FRAME_TIME, this.sceneInstrumentation.frameTimeCounter.lastSecAverage);
 
-        // Draw calls
-        this.addSample(MetricType.DRAW_CALLS, this.engineInstrumentation.drawCallsCounter.lastSecAverage);
+        // Draw calls - API not available in this version
+        // this.addSample(MetricType.DRAW_CALLS, this.engineInstrumentation.drawCallsCounter.lastSecAverage);
 
-        // Render stats
-        const renderInfo = this.scene.getEngine().getInfo();
-        this.addSample(MetricType.TRIANGLES, renderInfo.numTotalTriangles || 0);
-        this.addSample(MetricType.VERTICES, renderInfo.numTotalVertices || 0);
+        // Render stats - getInfo() not available in this version
+        // const renderInfo = this.scene.getEngine().getInfo();
+        // this.addSample(MetricType.TRIANGLES, renderInfo.numTotalTriangles || 0);
+        // this.addSample(MetricType.VERTICES, renderInfo.numTotalVertices || 0);
 
         // Scene stats
         this.addSample(MetricType.MESHES, this.scene.meshes.length);
