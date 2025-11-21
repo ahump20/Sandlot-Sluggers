@@ -464,6 +464,7 @@ export class AdvancedAnalyticsSystem {
         battingAverage: number;
         onBasePercentage: number;
         sluggingPercentage: number;
+        earnedRunAverage: number;
         fieldingIndependentPitching: number;
         fieldingIndependentPitchingConstant: number; // FIP constant
         weightedOnBaseAverage: number; // wOBA
@@ -505,6 +506,7 @@ export class AdvancedAnalyticsSystem {
             battingAverage: 0.250,
             onBasePercentage: 0.320,
             sluggingPercentage: 0.420,
+            earnedRunAverage: 4.00,
             fieldingIndependentPitching: 4.00,
             fieldingIndependentPitchingConstant: 3.10,
             weightedOnBaseAverage: 0.320,
@@ -1042,13 +1044,17 @@ export class AdvancedAnalyticsSystem {
 
     public exportToCSV(playerId: string): string {
         const stats = this.getPlayerStats(playerId);
-        if (!stats || !stats.careerTotals.batting) return '';
-
-        const batting = stats.careerTotals.batting;
-        const headers = Object.keys(batting).join(',');
-        const values = Object.values(batting).join(',');
-
-        return `${headers}\n${values}`;
+        if (!stats) return '';
+        
+        // Check if it's CareerStats (has careerTotals property)
+        if ('careerTotals' in stats && stats.careerTotals.batting) {
+            const batting = stats.careerTotals.batting;
+            const headers = Object.keys(batting).join(',');
+            const values = Object.values(batting).join(',');
+            return `${headers}\n${values}`;
+        }
+        
+        return '';
     }
 
     public dispose(): void {
