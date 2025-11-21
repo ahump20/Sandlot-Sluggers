@@ -111,7 +111,7 @@ export interface CrowdMember {
     drinkItem?: string;
 }
 
-export interface CrowdSection Data {
+export interface CrowdSectionData {
     section: CrowdSection;
     capacity: number;
     currentOccupancy: number;
