@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMI Live Dashboard - Blaze Sports Intel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .formula {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .games-selector {
+            background: rgba(255,255,255,0.15);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .game-card {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .game-card:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .game-card.active {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.3);
+        }
+
+        .game-status {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .game-teams {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin: 5px 0;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .mmi-display {
+            background: rgba(255,255,255,0.15);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .mmi-score {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .mmi-value {
+            font-size: 6em;
+            font-weight: 700;
+            line-height: 1;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+        }
+
+        .mmi-category {
+            font-size: 1.5em;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+
+        .mmi-elite { color: #ff4444; }
+        .mmi-high { color: #ff9800; }
+        .mmi-moderate { color: #ffeb3b; }
+        .mmi-routine { color: #4CAF50; }
+
+        .situation {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .situation-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .situation-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .situation-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .situation-value {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .components {
+            background: rgba(255,255,255,0.15);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .component-item {
+            margin-bottom: 20px;
+        }
+
+        .component-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .component-name {
+            font-weight: 600;
+        }
+
+        .component-weight {
+            opacity: 0.7;
+            font-size: 0.9em;
+        }
+
+        .component-bar {
+            height: 30px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .component-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-weight: 600;
+            transition: width 0.5s ease;
+        }
+
+        .leaderboard {
+            background: rgba(255,255,255,0.15);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .leaderboard-title {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .leaderboard-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .rank {
+            font-size: 1.5em;
+            font-weight: 700;
+            width: 40px;
+        }
+
+        .player-info {
+            flex: 1;
+            padding: 0 15px;
+        }
+
+        .player-name {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .player-context {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 3px;
+        }
+
+        .score-badge {
+            font-size: 1.5em;
+            font-weight: 700;
+            padding: 5px 15px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: rgba(255,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 2px solid rgba(255,0,0,0.5);
+        }
+
+        .refresh-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .timestamp {
+            text-align: center;
+            opacity: 0.7;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .mmi-value {
+                font-size: 4em;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .situation-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔥 MMI Live Dashboard</h1>
+            <p class="subtitle">Moment Mentality Index - Quantifying Mental Toughness</p>
+            <div class="formula">
+                MMI = z(LI)·35% + z(Pressure)·20% + z(Fatigue)·20% + z(Execution)·15% + z(Bio)·10%
+            </div>
+        </header>
+
+        <div class="games-selector">
+            <h2>Select Live Game</h2>
+            <div id="gamesGrid" class="games-grid">
+                <div class="loading">Loading today's games...</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div>
+                <div class="mmi-display">
+                    <h2>Current Moment</h2>
+                    <div id="mmiScore" class="mmi-score">
+                        <div class="loading">Select a game to see live MMI</div>
+                    </div>
+
+                    <div id="situation" class="situation" style="display: none;">
+                        <h3 style="margin-bottom: 15px;">Situation</h3>
+                        <div class="situation-grid" id="situationGrid"></div>
+                    </div>
+
+                    <div id="players" style="display: none; margin-top: 20px;">
+                        <h3>Matchup</h3>
+                        <div class="situation-grid" id="playersGrid"></div>
+                    </div>
+                </div>
+
+                <div class="leaderboard" style="margin-top: 30px;">
+                    <div class="leaderboard-title">🏆 Top MMI Moments (Last 7 Days)</div>
+                    <div id="leaderboard">
+                        <div class="loading">Loading top moments...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="components">
+                <h2>Component Breakdown</h2>
+                <div id="components">
+                    <div class="loading">Waiting for data...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="timestamp" id="timestamp"></div>
+        <div class="refresh-indicator" id="refreshIndicator">
+            Auto-refresh: <span id="countdown">5</span>s
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'https://blazesportsintel.com/mmi'; // Update after deployment
+        const REFRESH_INTERVAL = 5000; // 5 seconds
+        
+        let currentGameId = null;
+        let refreshTimer = null;
+        let countdownTimer = null;
+
+        // Initialize dashboard
+        async function init() {
+            await loadGames();
+            await loadLeaderboard();
+            startAutoRefresh();
+        }
+
+        // Load today's games
+        async function loadGames() {
+            try {
+                const response = await fetch(`${API_BASE}/games/today`);
+                const data = await response.json();
+
+                const gamesGrid = document.getElementById('gamesGrid');
+                
+                if (!data.games || data.games.length === 0) {
+                    gamesGrid.innerHTML = '<div class="loading">No games today</div>';
+                    return;
+                }
+
+                gamesGrid.innerHTML = data.games.map(game => `
+                    <div class="game-card" onclick="selectGame('${game.gameId}')">
+                        <div class="game-status">${game.status}</div>
+                        <div class="game-teams">
+                            ${game.teams.away} @ ${game.teams.home}
+                        </div>
+                        <div class="game-time">${new Date(game.time).toLocaleTimeString()}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading games:', error);
+                document.getElementById('gamesGrid').innerHTML = `
+                    <div class="error">Error loading games: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Select a game
+        async function selectGame(gameId) {
+            currentGameId = gameId;
+            
+            // Update UI
+            document.querySelectorAll('.game-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            event.target.closest('.game-card').classList.add('active');
+
+            // Load MMI data
+            await loadMMI();
+        }
+
+        // Load MMI for current game
+        async function loadMMI() {
+            if (!currentGameId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/${currentGameId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayMMI(data);
+            } catch (error) {
+                console.error('Error loading MMI:', error);
+                document.getElementById('mmiScore').innerHTML = `
+                    <div class="error">Error loading MMI: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Display MMI data
+        function displayMMI(data) {
+            // MMI Score
+            const categoryClass = data.category.toLowerCase().replace(' ', '-');
+            document.getElementById('mmiScore').innerHTML = `
+                <div class="mmi-value mmi-${categoryClass}">${data.mmi}</div>
+                <div class="mmi-category">${data.category}</div>
+            `;
+
+            // Situation
+            document.getElementById('situation').style.display = 'block';
+            document.getElementById('situationGrid').innerHTML = `
+                <div class="situation-item">
+                    <div class="situation-label">Inning</div>
+                    <div class="situation-value">${data.situation.half} ${data.situation.inning}</div>
+                </div>
+                <div class="situation-item">
+                    <div class="situation-label">Count</div>
+                    <div class="situation-value">${data.situation.count}</div>
+                </div>
+                <div class="situation-item">
+                    <div class="situation-label">Outs</div>
+                    <div class="situation-value">${data.situation.outs}</div>
+                </div>
+                <div class="situation-item">
+                    <div class="situation-label">Baserunners</div>
+                    <div class="situation-value">${data.situation.baserunners}</div>
+                </div>
+                <div class="situation-item">
+                    <div class="situation-label">Score</div>
+                    <div class="situation-value">${data.situation.score}</div>
+                </div>
+            `;
+
+            // Players
+            document.getElementById('players').style.display = 'block';
+            document.getElementById('playersGrid').innerHTML = `
+                <div class="situation-item">
+                    <div class="situation-label">Pitcher</div>
+                    <div class="situation-value">${data.players.pitcher.name}</div>
+                </div>
+                <div class="situation-item">
+                    <div class="situation-label">Batter</div>
+                    <div class="situation-value">${data.players.batter.name}</div>
+                </div>
+            `;
+
+            // Components
+            displayComponents(data.components);
+
+            // Timestamp
+            document.getElementById('timestamp').textContent = 
+                `Last updated: ${new Date(data.timestamp).toLocaleString()}`;
+        }
+
+        // Display component breakdown
+        function displayComponents(components) {
+            const sortedComponents = Object.entries(components).sort((a, b) => 
+                b[1].raw - a[1].raw
+            );
+
+            document.getElementById('components').innerHTML = sortedComponents.map(([name, data]) => {
+                const percentage = Math.min(100, Math.max(0, data.raw));
+                const displayName = name.replace(/([A-Z])/g, ' $1').trim();
+                const displayNameCapitalized = displayName.charAt(0).toUpperCase() + displayName.slice(1);
+
+                return `
+                    <div class="component-item">
+                        <div class="component-header">
+                            <span class="component-name">${displayNameCapitalized}</span>
+                            <span class="component-weight">${(data.weight * 100).toFixed(0)}% weight</span>
+                        </div>
+                        <div class="component-bar">
+                            <div class="component-fill" style="width: ${percentage}%">
+                                ${data.raw.toFixed(1)}
+                            </div>
+                        </div>
+                        <div style="font-size: 0.85em; opacity: 0.7; margin-top: 5px;">
+                            z-score: ${data.zScore.toFixed(2)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Load leaderboard
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch(`${API_BASE}/top?limit=10&timeframe=7`);
+                const data = await response.json();
+
+                const leaderboard = document.getElementById('leaderboard');
+                
+                if (!data.moments || data.moments.length === 0) {
+                    leaderboard.innerHTML = '<div class="loading">No moments recorded yet</div>';
+                    return;
+                }
+
+                leaderboard.innerHTML = data.moments.map((moment, index) => {
+                    const categoryClass = moment.category.toLowerCase().replace(' ', '-');
+                    return `
+                        <div class="leaderboard-item">
+                            <div class="rank">#${index + 1}</div>
+                            <div class="player-info">
+                                <div class="player-name">Game ${moment.game_id}</div>
+                                <div class="player-context">
+                                    Inning ${moment.inning} • ${moment.outs} outs • ${moment.count}
+                                </div>
+                            </div>
+                            <div class="score-badge mmi-${categoryClass}">
+                                ${moment.mmi_score.toFixed(1)}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+                document.getElementById('leaderboard').innerHTML = `
+                    <div class="error">Error loading leaderboard: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Auto-refresh
+        function startAutoRefresh() {
+            let countdown = 5;
+            
+            countdownTimer = setInterval(() => {
+                countdown--;
+                document.getElementById('countdown').textContent = countdown;
+                
+                if (countdown <= 0) {
+                    countdown = 5;
+                    if (currentGameId) {
+                        loadMMI();
+                    }
+                    loadLeaderboard();
+                }
+            }, 1000);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
