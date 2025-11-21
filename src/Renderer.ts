@@ -4,7 +4,11 @@ export class Renderer {
     height: number;
 
     constructor(canvas: HTMLCanvasElement) {
-        this.ctx = canvas.getContext('2d')!;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            throw new Error('Failed to get 2D rendering context');
+        }
+        this.ctx = ctx;
         this.width = canvas.width = 800;
         this.height = canvas.height = 600;
     }
