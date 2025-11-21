@@ -275,7 +275,7 @@ export class CrowdSystem {
         this.mascots = new Map();
         this.vendors = [];
 
-        this.noiseLayers = new Map();
+        this.noiseSlayers = new Map();
         this.currentNoiseLevel = 30;
         this.targetNoiseLevel = 30;
 
