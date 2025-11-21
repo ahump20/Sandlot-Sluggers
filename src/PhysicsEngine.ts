@@ -11,7 +11,7 @@ export class PhysicsEngine {
         // Create new velocity object with gravity and friction applied
         let newVelocity: Vector2 = {
             x: velocity.x * this.friction,
-            y: (velocity.y + this.gravity) * this.friction
+            y: velocity.y + this.gravity
         };
 
         // Create new position object
