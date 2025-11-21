@@ -12,7 +12,6 @@
   },
   "include": [
     "src/PhysicsEngine.ts",
-    "src/Renderer.ts",
-    "src/main.ts"
+    "src/Renderer.ts"
   ]
 }
