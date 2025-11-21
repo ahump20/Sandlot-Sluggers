@@ -42,10 +42,10 @@ export class Renderer {
 
     drawBall(x: number, y: number): void {
         this.ctx.fillStyle = 'white';
+        this.ctx.strokeStyle = 'black';
         this.ctx.beginPath();
         this.ctx.arc(x, y, 5, 0, Math.PI * 2);
         this.ctx.fill();
-        this.ctx.strokeStyle = 'black';
         this.ctx.stroke();
     }
 

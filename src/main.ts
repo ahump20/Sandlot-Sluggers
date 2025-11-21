@@ -13,6 +13,7 @@ let gameState = 'PITCHING'; // PITCHING, HITTING, RUNNING
 // Input Handling
 window.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && gameState === 'PITCHING') {
+        e.preventDefault(); // Prevent page scrolling
         // Pitch the ball
         gameState = 'HITTING';
         ball = { x: 400, y: 200 }; // Start from pitcher mound
@@ -44,6 +45,16 @@ function gameLoop(): void {
         const result = physics.updateBall(ball, ballVelocity);
         ball = result.position;
         ballVelocity = result.velocity;
+
+        // Reset game state if ball goes out of bounds or stops
+        const isOutOfBounds = ball.x < 0 || ball.x > 800 || ball.y < 0 || ball.y > 600;
+        const hasStopped = Math.abs(ballVelocity.x) < 0.1 && Math.abs(ballVelocity.y) < 0.1 && ball.y >= 500;
+        
+        if (isOutOfBounds || hasStopped) {
+            gameState = 'PITCHING';
+            ball = { x: 400, y: 400 };
+            ballVelocity = { x: 0, y: 0 };
+        }
     }
 
     renderer.drawBatter(360, 460, isSwinging);
