@@ -27,6 +27,9 @@ const HIT_VELOCITY_X_RANGE = 10;
 // Swing animation duration
 const SWING_DURATION_MS = 300;
 
+// Ball velocity thresholds for game state reset
+const VELOCITY_SETTLED_THRESHOLD = 0.1;
+
 // Game state type
 type GameState = 'PITCHING' | 'HITTING' | 'RUNNING';
 
@@ -78,7 +81,7 @@ function gameLoop(): void {
         ballVelocity = result.velocity;
 
         // Check if ball has settled (very low velocity) or gone out of bounds
-        const isSettled = Math.abs(ballVelocity.x) < 0.1 && Math.abs(ballVelocity.y) < 0.1;
+        const isSettled = Math.abs(ballVelocity.x) < VELOCITY_SETTLED_THRESHOLD && Math.abs(ballVelocity.y) < VELOCITY_SETTLED_THRESHOLD;
         const isOutOfBounds = ball.x < 0 || ball.x > CANVAS_WIDTH || ball.y < 0 || ball.y > CANVAS_HEIGHT;
         
         if (isSettled || isOutOfBounds) {

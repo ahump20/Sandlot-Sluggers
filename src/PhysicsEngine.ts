@@ -24,13 +24,13 @@ export class PhysicsEngine {
      * @returns Updated position and velocity
      */
     updateBall(position: Vector2, velocity: Vector2): { position: Vector2, velocity: Vector2 } {
-        // Apply friction first (to previous frame's velocity)
+        // Apply air resistance to horizontal velocity
         let newVelocity: Vector2 = {
             x: velocity.x * this.friction,
-            y: velocity.y * this.friction
+            y: velocity.y
         };
         
-        // Then add gravity
+        // Add gravity to vertical velocity
         newVelocity.y += this.gravity;
 
         // Create new position object
