@@ -1,158 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#1a5490">
-  <meta name="description" content="Sandlot Sluggers - A production-ready baseball game with hyper-realistic physics and stunning graphics, inspired by Backyard Baseball 2001">
-  <meta name="keywords" content="baseball game, backyard baseball, sports game, web game, 3D baseball">
-  <meta name="author" content="Sandlot Sluggers Team">
-
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://sandlot-sluggers.pages.dev/">
-  <meta property="og:title" content="Sandlot Sluggers - Baseball Game">
-  <meta property="og:description" content="Play the most realistic web-based baseball game inspired by Backyard Baseball 2001">
-  <meta property="og:image" content="/icons/icon-512x512.png">
-
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://sandlot-sluggers.pages.dev/">
-  <meta property="twitter:title" content="Sandlot Sluggers - Baseball Game">
-  <meta property="twitter:description" content="Play the most realistic web-based baseball game inspired by Backyard Baseball 2001">
-  <meta property="twitter:image" content="/icons/icon-512x512.png">
-
-  <title>⚾ Sandlot Sluggers - Baseball Game</title>
-  <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
-  <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive;
-      overflow: hidden;
-      background: #000;
-    }
-
-    #renderCanvas {
-      width: 100%;
-      height: 100vh;
-      display: block;
-      touch-action: none;
-    }
-
-    #loading-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #1a5490 0%, #2d7cbc 100%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      transition: opacity 0.5s ease-out;
-    }
-
-    #loading-screen.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    #loading-screen h1 {
-      color: #ffd700;
-      font-size: 48px;
-      text-shadow: 4px 4px 8px rgba(0,0,0,0.5);
-      margin-bottom: 30px;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-    }
-
-    .spinner {
-      border: 8px solid rgba(255,255,255,0.3);
-      border-top: 8px solid #ffd700;
-      border-radius: 50%;
-      width: 60px;
-      height: 60px;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    #loading-screen p {
-      color: white;
-      margin-top: 20px;
-      font-size: 18px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-    }
-
-    .loading-tip {
-      color: #ffd700;
-      margin-top: 40px;
-      font-size: 14px;
-      max-width: 400px;
-      text-align: center;
-      font-style: italic;
-    }
-
-    /* Prevent pull-to-refresh on mobile */
-    body {
-      overscroll-behavior: none;
-    }
-
-    /* Hide scrollbars */
-    ::-webkit-scrollbar {
-      display: none;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sandlot Sluggers - Canvas Edition</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #222;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            border: 2px solid #fff;
+            background: #000;
+        }
+        .instructions {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
-  <!-- Loading Screen -->
-  <div id="loading-screen">
-    <h1>⚾ SANDLOT SLUGGERS ⚾</h1>
-    <div class="spinner"></div>
-    <p id="loading-status">Loading the field...</p>
-    <div class="loading-tip">
-      💡 Tip: Click anywhere during batting to swing!
+    <div class="instructions">
+        <h3>Sandlot Sluggers</h3>
+        <p><strong>SPACE</strong> - Pitch the ball</p>
+        <p><strong>Z</strong> - Swing the bat</p>
     </div>
-  </div>
-
-  <!-- 3D Canvas -->
-  <canvas id="renderCanvas"></canvas>
-
-  <!-- UI Container (GameUI will inject here) -->
-  <div id="ui-container"></div>
-
-  <!-- Main Game Script -->
-  <script type="module" src="/src/main.ts"></script>
-
-  <!-- Service Worker Registration -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('Service Worker registered'))
-          .catch(err => console.log('Service Worker registration failed', err));
-      });
-    }
-  </script>
+    <canvas id="gameCanvas"></canvas>
+    <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
