@@ -339,12 +339,19 @@ export class GameEngine {
     const batterPos = this.batter.position;
     const distance = Vector3.Distance(ballPos, batterPos);
 
-    // Perfect contact zone
-    // const perfectZone = 1.5; // TODO: Use for bonus contact quality
+    // Perfect contact zone and regular contact zone
+    const perfectZone = 1.5; // Perfect timing zone for bonus contact quality
     const contactZone = 3;
 
     if (distance < contactZone) {
-      const contactQuality = 1 - (distance / contactZone);
+      let contactQuality = 1 - (distance / contactZone);
+
+      // Apply perfect zone bonus for exceptional timing
+      if (distance < perfectZone) {
+        const perfectBonus = 1 - (distance / perfectZone);
+        contactQuality = Math.min(1.5, contactQuality + (perfectBonus * 0.3)); // Up to 30% bonus
+      }
+
       const power = this.gameState.currentBatter.battingPower;
       const accuracy = this.gameState.currentBatter.battingAccuracy;
 
