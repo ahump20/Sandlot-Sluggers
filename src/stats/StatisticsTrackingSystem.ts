@@ -298,7 +298,7 @@ export class StatisticsTrackingSystem {
   private playerGameLogs: Map<string, PlayerGameLog[]> = new Map();
 
   // Constants for advanced calculations
-  private readonly WO  BA_WEIGHTS = {
+  private readonly WOBA_WEIGHTS = {
     walk: 0.69,
     hitByPitch: 0.72,
     single: 0.88,
