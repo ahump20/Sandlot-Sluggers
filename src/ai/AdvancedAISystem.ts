@@ -510,7 +510,7 @@ export class AdvancedAISystem {
 
     // Ahead in count - paint corners or waste
     if (isAdvantage) {
-      const wasePitch = Math.random() > 0.6;
+      const wastePitch = Math.random() > 0.6;
       if (wastePitch) {
         // Outside strike zone
         return {

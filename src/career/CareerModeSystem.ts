@@ -812,7 +812,7 @@ export class CareerModeSystem {
   }
 
   private calculateSalary(rating: number, age: number): number {
-    const basesal = rating * 50000;
+    const baseSalary = rating * 50000;
     const ageFactor = age < 27 ? 0.8 : age > 33 ? 0.6 : 1.0;
     return Math.round(baseSalary * ageFactor);
   }

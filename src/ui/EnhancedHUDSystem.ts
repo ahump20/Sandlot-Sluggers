@@ -798,7 +798,7 @@ export class EnhancedHUDSystem {
         this.battingAnalysis = {
             swingTiming: timing,
             contactQuality,
-            plateDiscipline: discipline,
+            plateAppDiscipline: discipline,
             recommendedAdjustment: recommendation
         };
     }

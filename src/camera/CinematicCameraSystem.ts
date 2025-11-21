@@ -190,7 +190,7 @@ export interface CameraState {
  */
 export class CinematicCameraSystem {
     private scene: Scene;
-    private activeCamera: Camera;
+    private activeCamera!: Camera; // Initialized in constructor via setCamera
     private cameras: Map<string, Camera> = new Map();
     private currentMode: CameraMode = CameraMode.BROADCAST;
     private previousMode: CameraMode = CameraMode.BROADCAST;
@@ -727,13 +727,17 @@ export class CinematicCameraSystem {
 
         this.shakeFrequency = config.frequency || 30;
         this.shakeDecay = config.decay || 1.0;
-        this.shakeAxes = config.axes || { x: true, y: true, z: true };
+        this.shakeAxes = {
+            x: config.axes?.x ?? true,
+            y: config.axes?.y ?? true,
+            z: config.axes?.z ?? true
+        };
     }
 
     /**
      * Follow target
      */
-    public followTarget(target: Vector3, offset?: Vector3, smoothing?: number): void {
+    public startFollowingTarget(target: Vector3, offset?: Vector3, smoothing?: number): void {
         this.isFollowing = true;
         this.followTarget = target;
         this.followOffset = offset || Vector3.Zero();

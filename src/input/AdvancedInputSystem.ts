@@ -1,4 +1,4 @@
-import { Scene, Vector2, Vector3, Keyboard, PointerInfo, PointerEventTypes, GamepadManager, Gamepad, Observable, ActionManager, ExecuteCodeAction } from '@babylonjs/core';
+import { Scene, Vector2, Vector3, PointerInfo, PointerEventTypes, GamepadManager, Gamepad, Observable, ActionManager, ExecuteCodeAction } from '@babylonjs/core';
 
 /**
  * Input device types

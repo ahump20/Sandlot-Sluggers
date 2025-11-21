@@ -691,6 +691,7 @@ export class AchievementProgressionSystem {
         type: 'currency',
         id: 'coins',
         name: 'Coins',
+        description: 'In-game currency',
         quantity: 1000
       },
       isWeeklyRewardClaimed: false
@@ -719,6 +720,7 @@ export class AchievementProgressionSystem {
           type: 'experience',
           id: 'xp',
           name: 'XP',
+          description: 'Experience points',
           quantity: 500
         },
         expiresAt: new Date(Date.now() + (type === 'daily' ? 24 : 168) * 60 * 60 * 1000),
@@ -741,6 +743,7 @@ export class AchievementProgressionSystem {
           type: 'experience',
           id: 'xp',
           name: 'XP',
+          description: 'Experience points',
           quantity: 750
         },
         expiresAt: new Date(Date.now() + (type === 'daily' ? 24 : 168) * 60 * 60 * 1000),
@@ -763,6 +766,7 @@ export class AchievementProgressionSystem {
           type: 'experience',
           id: 'xp',
           name: 'XP',
+          description: 'Experience points',
           quantity: 250
         },
         expiresAt: new Date(Date.now() + (type === 'daily' ? 24 : 168) * 60 * 60 * 1000),
@@ -851,6 +855,7 @@ export class AchievementProgressionSystem {
             type: 'experience',
             id: 'xp',
             name: 'XP',
+            description: 'Experience points',
             quantity: 100
           }
         ],
@@ -880,6 +885,7 @@ export class AchievementProgressionSystem {
             type: 'experience',
             id: 'xp',
             name: 'XP',
+            description: 'Experience points',
             quantity: 2000
           },
           {
@@ -915,6 +921,7 @@ export class AchievementProgressionSystem {
             type: 'experience',
             id: 'xp',
             name: 'XP',
+            description: 'Experience points',
             quantity: 5000
           },
           {
@@ -950,6 +957,7 @@ export class AchievementProgressionSystem {
             type: 'currency',
             id: 'coins',
             name: 'Coins',
+            description: 'In-game currency',
             quantity: 500
           }
         ],
@@ -964,7 +972,7 @@ export class AchievementProgressionSystem {
   private createSkillTrees(): SkillTree[] {
     return [
       {
-        categoryId: 'batting',
+        categoryid: 'batting',
         name: 'Batting Skills',
         description: 'Improve your hitting prowess',
         skills: [
@@ -1011,7 +1019,7 @@ export class AchievementProgressionSystem {
         ]
       },
       {
-        categoryId: 'pitching',
+        categoryid: 'pitching',
         name: 'Pitching Skills',
         description: 'Dominate on the mound',
         skills: [
@@ -1074,7 +1082,8 @@ export class AchievementProgressionSystem {
           target: 10,
           current: 0,
           isCompleted: false,
-          reward: { type: 'experience', id: 'xp', name: 'XP', quantity: 100 }
+          reward: { type: 'experience', id: 'xp', name: 'XP', description: 'Experience points',
+            quantity: 100 }
         },
         {
           id: 'hr_50',
@@ -1083,7 +1092,8 @@ export class AchievementProgressionSystem {
           target: 50,
           current: 0,
           isCompleted: false,
-          reward: { type: 'experience', id: 'xp', name: 'XP', quantity: 500 }
+          reward: { type: 'experience', id: 'xp', name: 'XP', description: 'Experience points',
+            quantity: 500 }
         },
         {
           id: 'hr_100',

@@ -808,7 +808,7 @@ export class TeamManagementSystem {
         const tradeId = `trade_${Date.now()}`;
 
         // Calculate trade fairness
-        const fairness = this.evaluateTradefairness(
+        const fairness = this.evaluateTradeFairness(
             proposingTeam,
             receivingTeam,
             playersOffered,
@@ -1050,7 +1050,7 @@ export class TeamManagementSystem {
             },
             strengths: this.identifyPlayerStrengths(player),
             weaknesses: this.identifyPlayerWeaknesses(player),
-            projection: this.projectPlayerDevelopment(player),
+            projectRion: this.projectPlayerDevelopment(player),
             risk: this.assessPlayerRisk(player),
             recommendation: this.getScoutRecommendation(player),
             similarPlayers: []
@@ -1119,7 +1119,7 @@ export class TeamManagementSystem {
         if (player.isInjured) riskScore += 2;
         if (player.traits.some(t => t.traitId === 'injury_prone')) riskScore += 2;
         if (player.experience < 1) riskScore += 1; // Unproven
-        if (player.age > 35) riskScore += 2; // Age decline
+        // if (player.age > 35) riskScore += 2; // Age decline - TODO: add age property
         if (player.morale < 40) riskScore += 1;
 
         if (riskScore >= 4) return 'high';

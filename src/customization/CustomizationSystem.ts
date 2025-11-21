@@ -787,6 +787,7 @@ export class CustomizationSystem {
             teamName: 'New Team',
             teamAbbreviation: 'NT',
             primaryLogo: this.createDefaultLogo(),
+            wordmark: this.createDefaultLogo(), // Use same default for now
             primaryColor: new Color3(0.8, 0, 0),
             secondaryColor: new Color3(0, 0, 0),
             tertiaryColor: new Color3(1, 1, 1),

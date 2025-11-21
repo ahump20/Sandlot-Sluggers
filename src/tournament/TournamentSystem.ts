@@ -352,7 +352,7 @@ export class TournamentSystem {
             stats: {
                 runsScored: 0,
                 runsAllowed: 0,
-                differential: 0
+                differenti: 0
             }
         });
 

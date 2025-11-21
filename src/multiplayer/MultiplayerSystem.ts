@@ -266,7 +266,7 @@ export class MultiplayerSystem {
         this.networkStats = {
             packetsSent: 0,
             packetsReceived: 0,
-            bytesSent: 0,
+            bytestSent: 0,
             bytesReceived: 0,
             packetsLost: 0,
             averagePing: 0,
@@ -566,7 +566,7 @@ export class MultiplayerSystem {
             this.websocket.send(data);
 
             this.networkStats.packetsSent++;
-            this.networkStats.bytesSent += data.length;
+            this.networkStats.bytestSent += data.length;
 
             return true;
         } catch (error) {

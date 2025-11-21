@@ -241,9 +241,9 @@ export class AudioSystem {
     private muted: Map<AudioChannel, boolean>;
 
     // Audio processing
-    private analyser: AnalyserNode;
-    private compressor: DynamicsCompressorNode;
-    private convolver: ConvolverNode | null;
+    private analyser!: AnalyserNode; // Initialized in initializeAudioProcessing
+    private compressor!: DynamicsCompressorNode; // Initialized in initializeAudioProcessing
+    private convolver: ConvolverNode | null = null;
 
     // Performance
     private maxSimultaneousSounds: number;
@@ -467,7 +467,7 @@ export class AudioSystem {
             volume: finalVolume,
             pitch: options?.pitch || 1.0,
             startTime: Date.now(),
-            duration: sound.getDuration() * 1000,
+            duration: 0, // TODO: Sound.getDuration() not available in this version
             position: options?.position,
             attachedTo: options?.attachTo,
             effects: []

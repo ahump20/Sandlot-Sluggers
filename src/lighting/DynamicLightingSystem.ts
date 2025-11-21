@@ -399,7 +399,7 @@ export class DynamicLightingSystem {
         this.moonLight.position = new Vector3(0, 50, 0);
         this.moonLight.intensity = 0.1;
         this.moonLight.diffuse = new Color3(0.5, 0.6, 0.8);
-        this.moonLight.enabled = false;
+        this.moonLight.setEnabled(false);
 
         // Setup shadows
         if (this.shadowsEnabled) {
@@ -415,11 +415,12 @@ export class DynamicLightingSystem {
 
         // Use cascaded shadows for better quality
         if (this.shadowQuality === 'high' || this.shadowQuality === 'ultra') {
-            this.sunShadowGenerator = new CascadedShadowGenerator(2048, this.sunLight);
-            this.sunShadowGenerator.numCascades = this.shadowQuality === 'ultra' ? 4 : 3;
-            this.sunShadowGenerator.shadowMaxZ = 200;
-            this.sunShadowGenerator.stabilizeCascades = true;
-            this.sunShadowGenerator.lambda = 0.9;
+            const cascadedGenerator = new CascadedShadowGenerator(2048, this.sunLight);
+            cascadedGenerator.numCascades = this.shadowQuality === 'ultra' ? 4 : 3;
+            cascadedGenerator.shadowMaxZ = 200;
+            cascadedGenerator.stabilizeCascades = true;
+            cascadedGenerator.lambda = 0.9;
+            this.sunShadowGenerator = cascadedGenerator;
         } else {
             const mapSize = this.shadowQuality === 'medium' ? 1024 : 512;
             this.sunShadowGenerator = new ShadowGenerator(mapSize, this.sunLight);

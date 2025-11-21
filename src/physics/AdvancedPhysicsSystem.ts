@@ -1,4 +1,4 @@
-import { Scene, Vector3, PhysicsImpostor, AbstractMesh, PhysicsEngine, HavokPlugin, Quaternion, Matrix, Observable, Ray, PickingInfo, Mesh } from '@babylonjs/core';
+import { Scene, Vector3, PhysicsImpostor, AbstractMesh, PhysicsEngine, HavokPlugin, Quaternion, Matrix, Observable, Ray, PickingInfo, Mesh, VertexBuffer } from '@babylonjs/core';
 import HavokPhysics from '@babylonjs/havok';
 
 /**
@@ -154,7 +154,7 @@ export class AdvancedPhysicsSystem {
     }> = new Map();
 
     // Collision tracking
-    private collisionHistory: CollisionEvent[] = new Map();
+    private collisionHistory: Map<string, CollisionEvent> = new Map();
     private maxCollisionHistory: number = 100;
 
     // Observables

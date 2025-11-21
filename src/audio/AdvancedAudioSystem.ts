@@ -34,6 +34,7 @@ export interface Sound {
   audioBuffer: AudioBuffer | null;
   url: string;
   volume: number;
+  loop?: boolean;
   loop: boolean;
   is3D: boolean;
   playbackRate: number;
@@ -59,6 +60,7 @@ export interface MusicLayer {
   track: MusicTrack;
   intensity: number; // 0-1
   volume: number;
+  loop?: boolean;
   audioBuffer: AudioBuffer | null;
   source: AudioBufferSourceNode | null;
 }

@@ -787,7 +787,7 @@ export class SaveLoadSystem {
 
             if (!response.ok) return;
 
-            const cloudSave = await response.json();
+            const cloudSave = await response.json() as SaveData;
             const localSave = this.saveFiles.get(slot);
 
             if (!localSave) return;
@@ -796,7 +796,7 @@ export class SaveLoadSystem {
             if (cloudSave.timestamp > localSave.data.timestamp) {
                 const conflict: SaveConflict = {
                     localSave: localSave.data,
-                    cloudSave: cloudSave.data,
+                    cloudSave: cloudSave,
                     strategy: 'use_cloud'
                 };
 
