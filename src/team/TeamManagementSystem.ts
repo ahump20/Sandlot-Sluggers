@@ -127,7 +127,7 @@ export interface Team {
 
     // Resources
     budget: number;
-    scouting Points: number;
+    scoutingPoints: number;
 }
 
 export interface LineupCard {
@@ -219,7 +219,7 @@ export interface TeamChemistry {
     infieldChemistry: number;
     outfieldChemistry: number;
     clubhouseLeaders: string[];
-    personality Conflicts: Array<{ player1: string; player2: string; severity: number }>;
+    personalityConflicts: Array<{ player1: string; player2: string; severity: number }>;
 }
 
 export interface CoachingStaff {
