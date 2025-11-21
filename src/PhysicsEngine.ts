@@ -29,12 +29,4 @@ export class PhysicsEngine {
         return { position: newPosition, velocity: newVelocity };
     }
 
-    checkCollision(ballPos: Vector2, batRect: { x: number, y: number, width: number, height: number }): boolean {
-        return (
-            ballPos.x >= batRect.x &&
-            ballPos.x <= batRect.x + batRect.width &&
-            ballPos.y >= batRect.y &&
-            ballPos.y <= batRect.y + batRect.height
-        );
-    }
 }
