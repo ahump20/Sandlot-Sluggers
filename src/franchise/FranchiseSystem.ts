@@ -123,7 +123,7 @@ export interface DraftProspect {
     overall: number;
     potential: number;
     college?: string;
-    projected Round: number;
+    projectedRound: number;
     strengths: string[];
     weaknesses: string[];
     scouted: boolean;
