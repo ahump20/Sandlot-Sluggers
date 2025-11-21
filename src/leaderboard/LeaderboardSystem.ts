@@ -502,7 +502,7 @@ export class LeaderboardSystem {
         if (this.serverUrl) {
             try {
                 const response = await fetch(`${this.serverUrl}/leaderboards/${leaderboardId}`);
-                const data = await response.json();
+                const data = await response.json() as { entries?: any[]; lastUpdated?: number; totalEntries?: number };
 
                 board.entries = data.entries || [];
                 board.lastUpdated = data.lastUpdated || Date.now();

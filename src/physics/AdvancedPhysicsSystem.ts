@@ -1,4 +1,4 @@
-import { Scene, Vector3, PhysicsImpostor, AbstractMesh, PhysicsEngine, HavokPlugin, Quaternion, Matrix, Observable, Ray, PickingInfo, Mesh } from '@babylonjs/core';
+import { Scene, Vector3, PhysicsImpostor, AbstractMesh, PhysicsEngine, HavokPlugin, Quaternion, Matrix, Observable, Ray, PickingInfo, Mesh, VertexBuffer } from '@babylonjs/core';
 import HavokPhysics from '@babylonjs/havok';
 
 /**
