@@ -1,0 +1,36 @@
+name = "mmi-engine"
+compatibility_date = "2024-11-06"
+main = "worker-mmi-engine.js"
+
+# Routes for blazesportsintel.com
+routes = [
+  { pattern = "blazesportsintel.com/mmi/*", zone_name = "blazesportsintel.com" }
+]
+
+# Production environment
+[env.production]
+name = "mmi-engine-prod"
+
+# D1 Database binding
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "mmi-db"
+database_id = "" # Will be set during deployment
+
+# KV namespace for caching
+[[env.production.kv_namespaces]]
+binding = "KV"
+id = "" # Will be set during deployment
+
+# Development environment
+[env.development]
+name = "mmi-engine-dev"
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "mmi-db-dev"
+database_id = ""
+
+[[env.development.kv_namespaces]]
+binding = "KV"
+id = ""
