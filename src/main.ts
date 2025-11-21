@@ -21,8 +21,16 @@ window.addEventListener('keydown', (e) => {
         isSwinging = true;
         setTimeout(() => isSwinging = false, 300);
 
-        // Simple Hit Check
-        if (gameState === 'HITTING' && ball.y > 450 && ball.y < 520) {
+        // Improved Hit Check: check both x and y coordinates
+        const BAT_X = 360;
+        const BAT_WIDTH = isSwinging ? 60 : 20; // Swinging bat is wider
+        const HIT_MIN_X = BAT_X - 5; // Add some tolerance
+        const HIT_MAX_X = BAT_X + BAT_WIDTH + 5;
+        if (
+            gameState === 'HITTING' &&
+            ball.y > 450 && ball.y < 520 &&
+            ball.x > HIT_MIN_X && ball.x < HIT_MAX_X
+        ) {
             ballVelocity = { x: (Math.random() - 0.5) * 10, y: -15 }; // Hit into outfield
         }
     }
