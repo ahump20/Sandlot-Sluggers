@@ -47,6 +47,7 @@ export interface MinigameStatistics {
   homeRuns?: number;
   hits?: number;
   misses?: number;
+  catches?: number; // For catching minigames
   perfectHits?: number;
   averageExitVelocity?: number;
   longestHomeRun?: number;
@@ -765,8 +766,8 @@ export class MinigamesSystem {
     const stored = localStorage.getItem('minigame_highscores');
     if (stored) {
       try {
-        const data = JSON.parse(stored);
-        this.highScores = new Map(Object.entries(data));
+        const data = JSON.parse(stored) as Record<string, number>;
+        this.highScores = new Map(Object.entries(data) as [MinigameType, number][]);
       } catch (e) {
         console.error('Failed to load high scores:', e);
       }

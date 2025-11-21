@@ -241,8 +241,8 @@ export class AudioSystem {
     private muted: Map<AudioChannel, boolean>;
 
     // Audio processing
-    private analyser: AnalyserNode;
-    private compressor: DynamicsCompressorNode;
+    private analyser!: AnalyserNode; // Initialized in initializeAudioProcessing
+    private compressor!: DynamicsCompressorNode; // Initialized in initializeAudioProcessing
     private convolver: ConvolverNode | null;
 
     // Performance
