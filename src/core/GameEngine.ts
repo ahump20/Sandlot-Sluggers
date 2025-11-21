@@ -1,19 +1,23 @@
 import {
   Engine,
   Scene,
-  ArcRotateCamera,
-  HemisphericLight,
   Vector3,
-  MeshBuilder,
-  StandardMaterial,
-  Color3,
-  PhysicsAggregate,
-  PhysicsShapeType,
   HavokPlugin,
   Mesh,
-  AbstractMesh
+  AbstractMesh,
+  MeshBuilder,
+  StandardMaterial,
+  Color3
 } from "@babylonjs/core";
 import HavokPhysics from "@babylonjs/havok";
+import { BaseballPhysics, HitParameters, PitchParameters } from "../physics/BaseballPhysics";
+import { AdvancedRenderer } from "../graphics/AdvancedRenderer";
+import { FieldBuilder } from "../graphics/FieldBuilder";
+import { CameraController } from "../camera/CameraController";
+import { FieldingAI } from "../ai/FieldingAI";
+import { AnimationController } from "../animation/AnimationController";
+import { AudioManager } from "../audio/AudioManager";
+import { GameUI } from "../ui/GameUI";
 
 export interface GameConfig {
   canvas: HTMLCanvasElement;
@@ -63,17 +67,28 @@ export interface Stadium {
 export class GameEngine {
   private engine: Engine;
   private scene: Scene;
-  private camera: ArcRotateCamera;
   private gameState: GameState;
   private havokInstance: any;
   private ball: Mesh | null = null;
-  private ballPhysics: PhysicsAggregate | null = null;
   private pitcher: AbstractMesh | null = null;
   private batter: AbstractMesh | null = null;
-  private _fielders: Map<string, AbstractMesh> = new Map(); // TODO: Implement fielding
   private isPitching: boolean = false;
   private isBatting: boolean = false;
   private onStateChange: (state: GameState) => void;
+
+  // Advanced systems
+  private physics: BaseballPhysics;
+  private renderer: AdvancedRenderer;
+  private fieldBuilder: FieldBuilder;
+  private cameraController: CameraController;
+  private fieldingAI: FieldingAI;
+  private animationController: AnimationController;
+  private audioManager: AudioManager;
+  private gameUI: GameUI;
+
+  // Ball trajectory tracking
+  private ballTrajectory: Vector3[] = [];
+  private currentTrajectoryFrame: number = 0;
 
   constructor(config: GameConfig) {
     this.engine = new Engine(config.canvas, true, {
@@ -96,22 +111,23 @@ export class GameEngine {
       strikes: 0
     };
 
-    this.camera = new ArcRotateCamera(
-      "camera",
-      -Math.PI / 2,
-      Math.PI / 3,
-      40,
-      new Vector3(0, 0, 0),
-      this.scene
-    );
-    this.camera.attachControl(config.canvas, true);
-    this.camera.lowerRadiusLimit = 20;
-    this.camera.upperRadiusLimit = 60;
-    this.camera.lowerBetaLimit = 0.1;
-    this.camera.upperBetaLimit = Math.PI / 2;
+    // Initialize advanced systems
+    this.renderer = new AdvancedRenderer(this.scene, this.engine);
+    this.physics = new BaseballPhysics();
+    this.fieldBuilder = new FieldBuilder(this.scene, this.renderer);
+    this.cameraController = new CameraController(this.scene, config.canvas);
+    this.fieldingAI = new FieldingAI(this.scene);
+    this.animationController = new AnimationController(this.scene);
+    this.audioManager = new AudioManager(this.scene);
+    this.gameUI = new GameUI();
 
-    new HemisphericLight("light", new Vector3(0, 1, 0), this.scene);
+    // Build realistic field
+    this.buildRealisticField();
 
+    // Set up UI event handlers
+    this.setupUIHandlers();
+
+    // Initialize physics and load assets
     void this.initialize();
 
     this.engine.runRenderLoop(() => {
@@ -126,8 +142,59 @@ export class GameEngine {
 
   private async initialize(): Promise<void> {
     await this.initializePhysics();
-    this.createField();
+    await this.loadAudio();
     this.setupInputHandlers();
+    await this.loadPlayers();
+  }
+
+  private buildRealisticField(): void {
+    // Use default stadium dimensions
+    const dimensions = {
+      left: 35,
+      center: 40,
+      right: 35
+    };
+
+    this.fieldBuilder.buildField(dimensions);
+  }
+
+  private async loadAudio(): Promise<void> {
+    try {
+      await this.audioManager.loadAudio();
+      this.audioManager.playMusic("gameplay_upbeat");
+      this.audioManager.playAmbience("stadium_crowd");
+    } catch (error) {
+      console.warn("Audio loading failed:", error);
+    }
+  }
+
+  private async loadPlayers(): Promise<void> {
+    // Load pitcher and batter
+    await this.loadPlayer(
+      this.gameState.currentPitcher,
+      new Vector3(0, 0, 18.44),
+      "pitcher"
+    );
+    await this.loadPlayer(
+      this.gameState.currentBatter,
+      new Vector3(0, 0, 0),
+      "batter"
+    );
+
+    // Position camera targets
+    this.cameraController.setPitcherPosition(new Vector3(0, 0, 18.44));
+    this.cameraController.setBatterPosition(new Vector3(0, 0, 0));
+
+    // Load fielders (one at a time with positions)
+    const positions = ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"];
+    positions.forEach(pos => {
+      const player = this.createDefaultPlayer(pos);
+      const mesh = MeshBuilder.CreateCapsule(`fielder_${pos}`, {
+        radius: 0.5,
+        height: 2
+      }, this.scene);
+      this.fieldingAI.addFielder(player, mesh);
+    });
   }
 
   private async initializePhysics(): Promise<void> {
@@ -136,84 +203,24 @@ export class GameEngine {
     this.scene.enablePhysics(new Vector3(0, -9.81, 0), havokPlugin);
   }
 
-  private createField(): void {
-    // Ground
-    const ground = MeshBuilder.CreateGround("ground", {
-      width: 100,
-      height: 100
-    }, this.scene);
-    const groundMat = new StandardMaterial("groundMat", this.scene);
-    groundMat.diffuseColor = new Color3(0.2, 0.6, 0.2);
-    ground.material = groundMat;
-    new PhysicsAggregate(ground, PhysicsShapeType.BOX, {
-      mass: 0,
-      restitution: 0.3
-    }, this.scene);
+  private createDefaultPlayer(positionType: string): Player {
+    const positionNames: Record<string, string> = {
+      batter: "Rookie Slugger",
+      pitcher: "Ace Pitcher",
+      P: "Pitcher",
+      C: "Catcher",
+      "1B": "First Baseman",
+      "2B": "Second Baseman",
+      "3B": "Third Baseman",
+      SS: "Shortstop",
+      LF: "Left Fielder",
+      CF: "Center Fielder",
+      RF: "Right Fielder"
+    };
 
-    // Diamond
-    this.createDiamond();
-
-    // Outfield fence
-    this.createFence();
-  }
-
-  private createDiamond(): void {
-    const basePaths = [
-      { name: "home", pos: new Vector3(0, 0.1, 0) },
-      { name: "first", pos: new Vector3(13, 0.1, 13) },
-      { name: "second", pos: new Vector3(0, 0.1, 18.4) },
-      { name: "third", pos: new Vector3(-13, 0.1, 13) }
-    ];
-
-    basePaths.forEach(base => {
-      const baseMesh = MeshBuilder.CreateBox(base.name, {
-        width: 0.5,
-        height: 0.1,
-        depth: 0.5
-      }, this.scene);
-      baseMesh.position = base.pos;
-      const baseMat = new StandardMaterial(`${base.name}Mat`, this.scene);
-      baseMat.diffuseColor = new Color3(1, 1, 1);
-      baseMesh.material = baseMat;
-    });
-
-    // Pitcher's mound
-    const mound = MeshBuilder.CreateCylinder("mound", {
-      height: 0.3,
-      diameter: 3
-    }, this.scene);
-    mound.position = new Vector3(0, 0.15, 9);
-    const moundMat = new StandardMaterial("moundMat", this.scene);
-    moundMat.diffuseColor = new Color3(0.7, 0.5, 0.3);
-    mound.material = moundMat;
-  }
-
-  private createFence(): void {
-    const fencePoints = [];
-    const radius = 35;
-    for (let i = 0; i <= 180; i += 10) {
-      const angle = (i * Math.PI) / 180;
-      fencePoints.push(new Vector3(
-        radius * Math.sin(angle),
-        2,
-        radius * Math.cos(angle)
-      ));
-    }
-
-    const fence = MeshBuilder.CreateTube("fence", {
-      path: fencePoints,
-      radius: 0.2,
-      sideOrientation: Mesh.DOUBLESIDE
-    }, this.scene);
-    const fenceMat = new StandardMaterial("fenceMat", this.scene);
-    fenceMat.diffuseColor = new Color3(0.4, 0.3, 0.1);
-    fence.material = fenceMat;
-  }
-
-  private createDefaultPlayer(type: string): Player {
     return {
-      id: `player_${type}_${Date.now()}`,
-      name: type === "batter" ? "Rookie Slugger" : "Ace Pitcher",
+      id: `player_${positionType}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: positionNames[positionType] || "Player",
       battingPower: 5,
       battingAccuracy: 5,
       speed: 5,
@@ -221,13 +228,13 @@ export class GameEngine {
       pitchControl: 5,
       fieldingRange: 5,
       fieldingAccuracy: 5,
-      position: type === "batter" ? "C" : "P",
-      modelPath: `/models/${type}.glb`
+      position: positionType === "batter" ? "C" : positionType,
+      modelPath: `/models/${positionType}.glb`
     };
   }
 
   public async loadPlayer(player: Player, position: Vector3, role: "pitcher" | "batter"): Promise<void> {
-    // Simplified player representation - replace with actual model loading
+    // Simplified player representation - will be replaced with actual model loading
     const playerMesh = MeshBuilder.CreateCapsule(`${role}_${player.id}`, {
       radius: 0.5,
       height: 2
@@ -239,6 +246,9 @@ export class GameEngine {
       new Color3(0.2, 0.2, 0.8) : new Color3(0.8, 0.2, 0.2);
     playerMesh.material = playerMat;
 
+    // Enable shadows
+    this.renderer.addShadowCaster(playerMesh);
+
     if (role === "pitcher") {
       this.pitcher = playerMesh;
     } else {
@@ -249,22 +259,41 @@ export class GameEngine {
   private createBall(): void {
     if (this.ball) {
       this.ball.dispose();
-      this.ballPhysics?.dispose();
     }
 
     this.ball = MeshBuilder.CreateSphere("ball", {
-      diameter: 0.2
+      diameter: 0.0732 // Realistic baseball diameter (0.0732m = 2.88in)
     }, this.scene);
     const ballMat = new StandardMaterial("ballMat", this.scene);
     ballMat.diffuseColor = new Color3(1, 1, 1);
     this.ball.material = ballMat;
 
-    this.ballPhysics = new PhysicsAggregate(
-      this.ball,
-      PhysicsShapeType.SPHERE,
-      { mass: 0.145, restitution: 0.5 },
-      this.scene
-    );
+    // Enable shadows
+    this.renderer.addShadowCaster(this.ball);
+
+    // Set ball for camera tracking
+    this.cameraController.setBall(this.ball);
+  }
+
+  private setupUIHandlers(): void {
+    // Pitch button handler
+    const pitchBtn = this.gameUI.getPitchButton();
+    if (pitchBtn) {
+      pitchBtn.addEventListener("click", () => {
+        this.startPitch();
+        this.audioManager.playSFX("button_click", 0.5);
+      });
+    }
+
+    // Pause button handler
+    const pauseBtn = this.gameUI.getPauseButton();
+    if (pauseBtn) {
+      pauseBtn.addEventListener("click", () => {
+        // TODO: Implement pause logic
+        this.audioManager.playSFX("menu_select", 0.5);
+        console.log("Pause requested");
+      });
+    }
   }
 
   private setupInputHandlers(): void {
@@ -301,29 +330,48 @@ export class GameEngine {
     this.isPitching = true;
     this.createBall();
 
-    if (!this.ball || !this.ballPhysics) return;
+    if (!this.ball) return;
 
-    // Position ball at pitcher
+    // Position ball at pitcher's hand
     this.ball.position = this.pitcher.position.clone();
     this.ball.position.y += 1.5;
 
-    // Animate pitch
-    const pitchSpeed = this.gameState.currentPitcher.pitchSpeed;
-    const pitchControl = this.gameState.currentPitcher.pitchControl;
-
-    // Add randomness based on control
-    const controlVariance = (10 - pitchControl) * 0.1;
-    const targetX = (Math.random() - 0.5) * controlVariance;
-    // const targetY = 1.2 + (Math.random() - 0.5) * controlVariance; // TODO: Use for vertical pitch movement
-    const targetZ = 0;
-
-    const velocity = new Vector3(
-      targetX * pitchSpeed,
-      -2,
-      (targetZ - this.ball.position.z) * (pitchSpeed / 5)
+    // Play pitcher animation
+    this.animationController.playAnimation(
+      this.gameState.currentPitcher.id,
+      "pitch_windup",
+      false,
+      () => {
+        this.animationController.playAnimation(
+          this.gameState.currentPitcher.id,
+          "pitch_throw"
+        );
+      }
     );
 
-    this.ballPhysics.body.setLinearVelocity(velocity);
+    // Generate realistic pitch using advanced physics
+    const pitchTypes = ["fastball", "curveball", "slider", "changeup"] as const;
+    const pitchType = pitchTypes[Math.floor(Math.random() * pitchTypes.length)];
+
+    const pitchParams = this.physics.generatePitch(
+      this.gameState.currentPitcher.pitchSpeed,
+      this.gameState.currentPitcher.pitchControl,
+      pitchType,
+      this.ball.position
+    );
+
+    // Calculate trajectory
+    this.ballTrajectory = this.physics.calculatePitchTrajectory(pitchParams);
+    this.currentTrajectoryFrame = 0;
+
+    // Play sound
+    this.audioManager.playSFX("glove_pound", 0.6);
+
+    // Camera follows pitch
+    this.cameraController.toPitchView(800);
+
+    // Start animating ball
+    this.animateBallAlongTrajectory();
 
     // Check if pitch crosses plate
     setTimeout(() => {
@@ -339,12 +387,19 @@ export class GameEngine {
     const batterPos = this.batter.position;
     const distance = Vector3.Distance(ballPos, batterPos);
 
-    // Perfect contact zone
-    // const perfectZone = 1.5; // TODO: Use for bonus contact quality
-    const contactZone = 3;
+    // Contact zones
+    const perfectZone = 1.5; // Perfect contact bonus
+    const contactZone = 3.0; // Maximum contact range
 
     if (distance < contactZone) {
-      const contactQuality = 1 - (distance / contactZone);
+      // Calculate contact quality (0-1)
+      let contactQuality = 1 - (distance / contactZone);
+
+      // Perfect zone bonus
+      if (distance < perfectZone) {
+        contactQuality = Math.min(1.0, contactQuality * 1.2);
+      }
+
       const power = this.gameState.currentBatter.battingPower;
       const accuracy = this.gameState.currentBatter.battingAccuracy;
 
@@ -352,29 +407,94 @@ export class GameEngine {
       this.executeHit(contactQuality, power, accuracy);
     } else {
       // Swing and miss
+      this.animationController.playAnimation(
+        this.gameState.currentBatter.id,
+        "bat_miss"
+      );
+      this.audioManager.playSFX("bat_miss", 0.8);
       this.registerStrike();
     }
   }
 
   private executeHit(contactQuality: number, power: number, accuracy: number): void {
-    if (!this.ball || !this.ballPhysics) return;
+    if (!this.ball) return;
 
-    // Calculate hit vector
-    const baseForce = 20 + (power * 3) + (contactQuality * 10);
-    const launchAngle = 20 + (contactQuality * 30); // 20-50 degrees
-    const direction = (Math.random() - 0.5) * (11 - accuracy) * 10; // Spray angle
-
-    const hitVector = new Vector3(
-      Math.sin(direction * Math.PI / 180) * baseForce,
-      Math.sin(launchAngle * Math.PI / 180) * baseForce,
-      Math.cos(direction * Math.PI / 180) * baseForce
+    // Play bat animation based on contact quality
+    this.animationController.playAnimation(
+      this.gameState.currentBatter.id,
+      contactQuality > 0.5 ? "bat_hit" : "bat_swing"
     );
 
-    this.ballPhysics.body.setLinearVelocity(hitVector);
+    // Generate realistic hit using advanced physics
+    const hitParams = this.physics.generateHit(
+      contactQuality,
+      power,
+      accuracy,
+      70 // Assume 70 mph pitch speed for now
+    );
+
+    // Calculate trajectory
+    this.ballTrajectory = this.physics.calculateHitTrajectory(
+      hitParams,
+      this.ball.position
+    );
+    this.currentTrajectoryFrame = 0;
+
+    // Play sound based on contact quality
+    if (contactQuality > 0.8) {
+      this.audioManager.playSFX("bat_crack_homerun", 1.0);
+      this.cameraController.shake(0.8, 200);
+    } else if (contactQuality > 0.3) {
+      this.audioManager.playSFX("bat_crack", 0.8);
+      this.cameraController.shake(0.3, 100);
+    } else {
+      this.audioManager.playSFX("bat_crack", 0.5);
+    }
+
+    // Camera follows ball
+    this.cameraController.followBall(true);
+
     this.isBatting = false;
 
-    // Start tracking ball for fielding
+    // Fielders react
+    const distance = BaseballPhysics.getDistanceTraveled(this.ballTrajectory);
+    const hangTime = BaseballPhysics.getHangTime(this.ballTrajectory);
+
+    this.fieldingAI.reactToBattedBall({
+      points: this.ballTrajectory,
+      landingPoint: this.ballTrajectory[this.ballTrajectory.length - 1],
+      hangTime,
+      exitVelocity: hitParams.exitVelocity,
+      launchAngle: hitParams.launchAngle
+    });
+
+    // Start animating ball and tracking for fielding
+    this.animateBallAlongTrajectory();
     this.trackBallForFielding();
+  }
+
+  private animateBallAlongTrajectory(): void {
+    if (!this.ball || this.currentTrajectoryFrame >= this.ballTrajectory.length) {
+      return;
+    }
+
+    const fps = 60;
+    const frameTime = 1000 / fps;
+
+    const animate = () => {
+      if (!this.ball || this.currentTrajectoryFrame >= this.ballTrajectory.length) {
+        return;
+      }
+
+      this.ball.position = this.ballTrajectory[this.currentTrajectoryFrame];
+      this.currentTrajectoryFrame++;
+
+      if (this.currentTrajectoryFrame < this.ballTrajectory.length) {
+        setTimeout(animate, frameTime);
+      }
+    };
+
+    animate();
   }
 
   private trackBallForFielding(): void {
@@ -384,13 +504,43 @@ export class GameEngine {
         return;
       }
 
+      // Check if fielder can catch
+      const catchResult = this.fieldingAI.checkForCatch(this.ball.position);
+
+      if (catchResult.caught) {
+        clearInterval(checkInterval);
+
+        // Play catch animation and sound
+        if (catchResult.fielder) {
+          this.animationController.playAnimation(
+            catchResult.fielder.player.id,
+            "catch"
+          );
+
+          // Camera to fielding view
+          this.cameraController.toFieldingView(
+            catchResult.fielder.mesh.position,
+            this.ball.position,
+            800
+          );
+        }
+
+        this.audioManager.playSFX("catch", 1.0, this.ball.position);
+        this.audioManager.playCommentary("great_catch");
+        this.gameUI.showNotification("OUT!", 2000, "error");
+
+        this.registerOut("flyout");
+        return;
+      }
+
       // Ball hit ground
       if (this.ball.position.y < 0.2) {
         clearInterval(checkInterval);
+        this.audioManager.playSFX("ball_land", 0.6, this.ball.position);
         this.determineBallInPlay();
       }
 
-      // Ball out of play
+      // Ball out of play (home run)
       if (this.ball.position.z > 40 || Math.abs(this.ball.position.x) > 40) {
         clearInterval(checkInterval);
         this.registerHomeRun();
@@ -408,20 +558,44 @@ export class GameEngine {
 
     // Simple fielding outcome based on distance
     if (distanceFromHome < 15) {
-      this.registerOut("ground out");
+      this.audioManager.playSFX("crowd_aww");
+      this.gameUI.showNotification("Ground Out", 2000, "default");
+      this.registerOut("groundout");
     } else if (distanceFromHome < 25) {
+      this.audioManager.playSFX("crowd_cheer");
+      this.gameUI.showNotification("Single!", 2000, "success");
       this.advanceRunners(1);
     } else if (distanceFromHome < 35) {
+      this.audioManager.playSFX("crowd_cheer");
+      this.gameUI.showNotification("Double!", 2000, "success");
       this.advanceRunners(2);
     } else {
+      this.audioManager.playSFX("crowd_cheer");
+      this.gameUI.showNotification("Triple!", 2500, "success");
       this.advanceRunners(3);
     }
+
+    // Camera back to overview after play
+    setTimeout(() => {
+      this.cameraController.toOverview(1000);
+    }, 2000);
   }
 
   private handleFieldingSwipe(deltaX: number, deltaY: number): void {
-    // TODO: Implement fielding mechanics
-    // For now, just log the swipe
-    console.log(`Fielding swipe: ${deltaX}, ${deltaY}`);
+    // Implement fielding mechanics for manual fielding
+    // This could be used for player-controlled fielding in future
+    if (!this.ball) return;
+
+    const swipeStrength = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    const swipeAngle = Math.atan2(deltaY, deltaX);
+
+    // Play sound feedback
+    if (swipeStrength > 100) {
+      this.audioManager.playSFX("button_click", 0.4);
+    }
+
+    // Log for future implementation
+    console.log(`Fielding swipe - Strength: ${swipeStrength}, Angle: ${swipeAngle}`);
   }
 
   private checkPitchResult(): void {
@@ -453,26 +627,49 @@ export class GameEngine {
 
   private registerStrike(): void {
     this.gameState.strikes++;
+    this.audioManager.playSFX("umpire_strike", 0.6);
+
     if (this.gameState.strikes >= 3) {
+      this.gameUI.showNotification("Strike 3! You're Out!", 2000, "error");
       this.registerOut("strikeout");
+    } else {
+      this.gameUI.showNotification(`Strike ${this.gameState.strikes}`, 1500, "default");
     }
+
     this.updateGameState();
   }
 
   private registerBall(): void {
     this.gameState.balls++;
+    this.audioManager.playSFX("umpire_ball", 0.6);
+
     if (this.gameState.balls >= 4) {
+      this.gameUI.showNotification("Walk!", 2000, "success");
+      this.audioManager.playSFX("crowd_cheer", 0.5);
       this.advanceRunners(1); // Walk
+    } else {
+      this.gameUI.showNotification(`Ball ${this.gameState.balls}`, 1500, "default");
     }
+
     this.updateGameState();
   }
 
-  private registerOut(_type: string): void { // TODO: Log out type for stats
+  private registerOut(outType: string): void {
     this.gameState.outs++;
     this.resetCount();
 
+    // Log out type for stats tracking
+    console.log(`Out recorded: ${outType}`);
+    // TODO: Send to analytics API when implemented
+
     if (this.gameState.outs >= 3) {
-      this.endInning();
+      this.audioManager.playSFX("umpire_out", 0.7);
+      this.gameUI.showNotification("3 Outs! End of inning", 2500, "default");
+      setTimeout(() => {
+        this.endInning();
+      }, 2000);
+    } else {
+      this.audioManager.playSFX("umpire_out", 0.6);
     }
 
     this.updateGameState();
@@ -513,12 +710,38 @@ export class GameEngine {
       this.gameState.homeScore += runsScored;
     }
 
+    // Play sound for runs scored
+    if (runsScored > 0) {
+      this.audioManager.playSFX("crowd_cheer");
+    }
+
     this.resetCount();
     this.updateGameState();
   }
 
   private registerHomeRun(): void {
+    // Special home run effects
+    this.gameUI.showNotification("HOME RUN!", 3000, "homerun");
+    this.audioManager.playCommentary("homerun");
+    this.audioManager.playSFX("crowd_cheer", 1.0);
+
+    if (this.ball) {
+      this.cameraController.homeRunCamera(this.ball.position);
+    }
+
+    // Celebration animation
+    this.animationController.playAnimation(
+      this.gameState.currentBatter.id,
+      "celebrate",
+      true
+    );
+
     this.advanceRunners(4);
+
+    // Return camera to overview
+    setTimeout(() => {
+      this.cameraController.toOverview(1500);
+    }, 3000);
   }
 
   private resetCount(): void {
@@ -532,21 +755,72 @@ export class GameEngine {
 
     if (this.gameState.isTopOfInning) {
       this.gameState.isTopOfInning = false;
+      this.gameUI.showNotification("Bottom of inning ▼", 2500, "default");
     } else {
       this.gameState.isTopOfInning = true;
       this.gameState.inning++;
+      this.gameUI.showNotification(`Inning ${this.gameState.inning} ▲`, 2500, "default");
+
+      // Check for game end (9 innings)
+      if (this.gameState.inning > 9) {
+        this.endGame();
+        return;
+      }
     }
 
     this.resetCount();
     this.updateGameState();
+
+    // Camera back to overview
+    this.cameraController.toOverview(1000);
+  }
+
+  private endGame(): void {
+    const homeWins = this.gameState.homeScore > this.gameState.awayScore;
+    const message = homeWins
+      ? `Home Team Wins! ${this.gameState.homeScore} - ${this.gameState.awayScore}`
+      : `Away Team Wins! ${this.gameState.awayScore} - ${this.gameState.homeScore}`;
+
+    this.gameUI.showNotification(message, 5000, homeWins ? "success" : "error");
+
+    if (homeWins) {
+      this.audioManager.playMusic("victory", 0.5);
+    } else {
+      this.audioManager.playMusic("defeat", 0.5);
+    }
+
+    console.log("Game ended:", message);
+    // TODO: Send final stats to API
   }
 
   private updateGameState(): void {
+    // Update UI
+    this.gameUI.updateScoreboard(
+      this.gameState.awayScore,
+      this.gameState.homeScore,
+      this.gameState.inning,
+      this.gameState.isTopOfInning
+    );
+
+    this.gameUI.updateCount(
+      this.gameState.balls,
+      this.gameState.strikes
+    );
+
+    this.gameUI.updateBases(this.gameState.bases);
+    this.gameUI.updateOuts(this.gameState.outs);
+
+    // Notify state change callback
     this.onStateChange(this.gameState);
   }
 
   private update(): void {
-    // Game loop updates
+    const deltaTime = this.engine.getDeltaTime() / 1000; // Convert to seconds
+
+    // Update fielding AI
+    this.fieldingAI.update(deltaTime);
+
+    // Camera updates are handled automatically by camera controller
   }
 
   public getGameState(): GameState {
@@ -554,6 +828,15 @@ export class GameEngine {
   }
 
   public dispose(): void {
+    // Dispose all systems
+    this.cameraController.dispose();
+    this.fieldingAI.dispose();
+    this.animationController.dispose();
+    this.audioManager.dispose();
+    this.gameUI.dispose();
+    this.renderer.dispose();
+
+    // Dispose Babylon.js resources
     this.scene.dispose();
     this.engine.dispose();
   }

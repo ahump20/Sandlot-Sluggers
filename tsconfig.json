@@ -3,7 +3,7 @@
     "target": "ES2020",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2020", "ES2015", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -22,5 +22,5 @@
     /* Cloudflare Workers */
     "types": ["@cloudflare/workers-types"]
   },
-  "include": ["src", "functions"]
+  "include": ["src"]
 }
