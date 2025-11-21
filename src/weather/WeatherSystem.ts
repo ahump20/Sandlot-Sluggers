@@ -1,4 +1,4 @@
-import { Scene, ParticleSystem, Texture, Color4, Vector3, StandardMaterial, Mesh, HemisphericLight, DirectionalLight } from '@babylonjs/core';
+import { Scene, ParticleSystem, Texture, Color3, Color4, Vector3, StandardMaterial, Mesh, HemisphericLight, DirectionalLight } from '@babylonjs/core';
 
 /**
  * Weather conditions that affect gameplay
@@ -377,8 +377,8 @@ export class WeatherSystem {
 
         this.sunLight.intensity = sunIntensity;
         this.ambientLight.intensity = ambientIntensity;
-        this.sunLight.diffuse = new Color4(sunColor.r, sunColor.g, sunColor.b, 1);
-        this.ambientLight.diffuse = new Color4(ambientColor.r, ambientColor.g, ambientColor.b, 1);
+        this.sunLight.diffuse = new Color3(sunColor.r, sunColor.g, sunColor.b);
+        this.ambientLight.diffuse = new Color3(ambientColor.r, ambientColor.g, ambientColor.b);
     }
 
     /**
@@ -487,7 +487,7 @@ export class WeatherSystem {
         // Use Babylon's built-in fog
         this.scene.fogMode = Scene.FOGMODE_EXP2;
         this.scene.fogDensity = (1 - visibility) * 0.05;
-        this.scene.fogColor = new Color4(0.8, 0.8, 0.85, 1);
+        this.scene.fogColor = new Color3(0.8, 0.8, 0.85);
     }
 
     /**

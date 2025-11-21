@@ -211,7 +211,7 @@ export class CrowdSystem {
     private vendors: VendorData[];
 
     // Audio
-    private noiseSlayers: Map<string, CrowdNoiseLayer>;
+    private noiseLayers: Map<string, CrowdNoiseLayer>;
     private currentNoiseLevel: number;
     private targetNoiseLevel: number;
 

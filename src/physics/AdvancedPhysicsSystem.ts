@@ -154,7 +154,7 @@ export class AdvancedPhysicsSystem {
     }> = new Map();
 
     // Collision tracking
-    private collisionHistory: CollisionEvent[] = new Map();
+    private collisionHistory: Map<string, CollisionEvent> = new Map();
     private maxCollisionHistory: number = 100;
 
     // Observables

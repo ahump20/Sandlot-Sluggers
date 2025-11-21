@@ -127,7 +127,7 @@ export class ReplaySystem {
     private lastSnapshotTime: number = 0;
 
     // Events
-    private recordedEvents: ReplayEvent[] = new Map();
+    private recordedEvents: Map<string, ReplayEvent> = new Map();
     private currentEventId: number = 0;
 
     // Playback

@@ -431,7 +431,7 @@ export class BattingSystem {
      * Calculate timing quality from timing offset
      */
     private calculateTimingQuality(swingTiming: number): number {
-        const absTimingretError = Math.abs(swingTiming);
+        const absTimingError = Math.abs(swingTiming);
 
         if (absTimingError <= this.timingWindows.perfectWindow) {
             return 1.0; // Perfect

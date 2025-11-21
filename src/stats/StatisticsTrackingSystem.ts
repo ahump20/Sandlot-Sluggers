@@ -372,7 +372,7 @@ export class StatisticsTrackingSystem {
         stats.atBats++;
         stats.hits++;
         stats.homeRuns++;
-        stats.rbi++;
+        stats.rbis++;
         stats.runs++;
         break;
       case 'walk':
@@ -885,7 +885,7 @@ export class StatisticsTrackingSystem {
       defensiveRunsSaved: 0,
       outfielderArmStrength: 0,
       catcherFramingRuns: 0,
-      catcherThrowingRuns: 0,
+      catcherThrowingRunning: 0,
       catcherBlockingRuns: 0
     };
   }
