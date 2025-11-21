@@ -82,7 +82,7 @@ export interface SkillChallenge {
 
 export interface TargetPracticeSettings {
   targets: Target[];
-  accuracy Threshold: number;
+  accuracyThreshold: number;
   timeLimit: number;
   pointsPerTarget: number;
   bonusPointsForStreak: number;
