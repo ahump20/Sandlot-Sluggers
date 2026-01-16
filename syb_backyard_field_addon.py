@@ -45,10 +45,8 @@ def ensure_collection(name, parent=None):
 
 
 def safe_unlink_object(obj, col):
-    try:
+    if obj in col.objects:
         col.objects.unlink(obj)
-    except RuntimeError:
-        pass
 
 
 def link_to_collection(obj, col):
