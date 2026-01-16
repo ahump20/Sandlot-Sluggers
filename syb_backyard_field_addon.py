@@ -11,7 +11,7 @@ bl_info = {
 import bpy
 import bmesh
 import random
-from math import radians, cos, sin, pi
+from math import radians, cos, sin
 from mathutils import Vector
 from bpy_extras.io_utils import ExportHelper
 
