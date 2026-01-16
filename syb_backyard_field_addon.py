@@ -1201,7 +1201,7 @@ class SYB_PT_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="Stylized Youth Field (60 ft) + Cameras")
+        layout.label(text="Stylized Youth Field (60 ft.) + Cameras")
 
         layout.prop(context.scene, "syb_clear_existing")
         layout.prop(context.scene, "syb_include_props")
