@@ -879,6 +879,7 @@ class SYB_OT_generate_field_plus(bpy.types.Operator):
             ondeck = add_cylinder("SYB_OnDeck", radius=0.95, depth=0.01, location=(-3.2, 1.5, 0.008), verts=24)
             ondeck.scale.x = 1.25
             ondeck.scale.y = 1.05
+            set_active(ondeck)
             bpy.ops.object.transform_apply(scale=True)
             assign_mat(ondeck, mat_line)
             link_to_collection(ondeck, col_lines)
