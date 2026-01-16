@@ -1148,9 +1148,9 @@ class SYB_OT_generate_field_plus(bpy.types.Operator):
 
         # Optional: apply bevel modifiers pre-export
         if self.apply_bevel_mods:
-            for o in bpy.data.objects:
-                if o.name.startswith("SYB_") and o.type == "MESH":
-                    apply_modifiers(o)
+            for obj in root_empty.children_recursive:
+                if obj.type == "MESH":
+                    apply_modifiers(obj)
 
         self.report({"INFO"}, "SYB Plus field generated (retro neighborhood vibe + cameras).")
         return {"FINISHED"}
