@@ -342,6 +342,9 @@ def build_dirt_patch(name, radius=0.8, location=(0, 0, 0), scale=(1.0, 1.0), dep
     patch = add_cylinder(name, radius=radius, depth=depth, location=(location[0], location[1], z + depth / 2.0), verts=18)
     patch.scale.x = scale[0]
     patch.scale.y = scale[1]
+    deselect_all()
+    patch.select_set(True)
+    bpy.context.view_layer.objects.active = patch
     bpy.ops.object.transform_apply(scale=True)
     shade(patch, True)
     return patch
