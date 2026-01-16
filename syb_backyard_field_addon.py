@@ -79,13 +79,30 @@ def cleanup_previous(prefix="SYB_"):
             bpy.data.objects.remove(o, do_unlink=True)
 
 
-def make_material(name, base_color=(1, 1, 1, 1), rough=0.8, spec=0.2, emission=0.0):
+def make_material(
+        name,
+        base_color=(1, 1, 1, 1),
+        rough=0.8,
+        spec=0.2,
+        emission=0.0,
+        update_existing=True,
+):
     """
     Simple Principled-only material (GLB-friendly).
+
+    If a material with the given name already exists:
+    - When update_existing is False, the existing material is returned as-is.
+    - When update_existing is True (default), the material's nodes are reset to a
+      simple Principled BSDF setup using the provided parameters.
     """
     mat = bpy.data.materials.get(name)
     if mat is None:
         mat = bpy.data.materials.new(name)
+        mat.use_nodes = True
+    else:
+        if not update_existing:
+            return mat
+        # Ensure nodes are enabled before rebuilding the node tree.
         mat.use_nodes = True
 
     nodes = mat.node_tree.nodes
