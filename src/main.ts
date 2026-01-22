@@ -3,12 +3,10 @@ import { ORIGINAL_CHARACTERS } from "./data/characters";
 import { ProgressionAPI, type PlayerProgress } from "./api/progression";
 import { Vector3 } from "@babylonjs/core";
 
-const canvasElement = document.getElementById("renderCanvas") as HTMLCanvasElement | null;
-if (!canvasElement) {
+const canvas = document.getElementById("renderCanvas");
+if (!canvas) {
   throw new Error("Game canvas not found");
 }
-
-const renderCanvas = canvasElement;
 
 const progressionAPI = new ProgressionAPI();
 
@@ -64,7 +62,7 @@ async function refreshProgress(): Promise<void> {
 
 async function bootstrap(): Promise<void> {
   const game = await GameEngine.create({
-    canvas: renderCanvas,
+    canvas: canvas as HTMLCanvasElement,
     onGameStateChange: (state) => {
       updateUI(state);
     }
