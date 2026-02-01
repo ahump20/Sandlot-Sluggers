@@ -1,0 +1,29 @@
+# Sandlot Sluggers inference config
+# Generate new baseball gameplay frames from a prompt image
+
+# paths (auto-resolved if use_latest_checkpoints is true)
+video_tokenizer_path:
+latent_actions_path:
+dynamics_path:
+use_latest_checkpoints: true
+
+# inference params
+dataset: SANDLOT_SLUGGERS
+preload_ratio:
+device: cuda
+generation_steps: 20
+context_window: 4
+fps: 15
+temperature: 0.5
+teacher_forced: false
+prediction_horizon: 1
+
+# action selection
+use_actions: false
+use_gt_actions: false
+use_interactive_mode: true    # user controls the game via action inputs
+
+# inference acceleration
+amp: true
+tf32: true
+compile: true
