@@ -1,0 +1,41 @@
+# Sandlot Sluggers world model training config
+# Trains all 3 Genie stages on captured baseball gameplay footage
+
+# wandb
+use_wandb: true
+wandb_project: sandlot-sluggers-genie
+
+# dataset
+dataset: SANDLOT_SLUGGERS
+preload_ratio: 1.0
+
+# shared model params
+patch_size: 4
+context_length: 4
+frame_size: 128       # 128x128 captures enough baseball field detail
+latent_dim: 5
+num_bins: 4
+n_actions: 8          # 8 discrete actions: swing, bunt, pitch types, run, field
+
+# performance
+amp: true
+tf32: true
+compile: true
+
+# distributed launch
+distributed:
+  use_ddp: false
+  use_fsdp: false
+  reshard_after_forward: false
+nproc_per_node: 1
+standalone: true
+
+# stage configs
+video_tokenizer_config: configs/video_tokenizer.yaml
+latent_actions_config: configs/latent_actions.yaml
+dynamics_config: configs/dynamics.yaml
+
+# which stages to run
+run_video_tokenizer: true
+run_latent_actions: true
+run_dynamics: true
