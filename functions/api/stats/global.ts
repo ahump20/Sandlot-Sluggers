@@ -31,7 +31,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       return new Response(JSON.stringify(cached), {
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "public, max-age=60"
+          "Cache-Control": "public, max-age=60",
+          "Access-Control-Allow-Origin": "*"
         }
       });
     }

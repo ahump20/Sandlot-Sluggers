@@ -44,42 +44,39 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     hitsRecorded * 4 +
     homeRunsHit * 16;
 
-  const currentRow = await ensurePlayerRow(env.DB, payload.playerId);
-  const currentProgress = rowToProgress(currentRow)!;
+  await ensurePlayerRow(env.DB, payload.playerId);
 
-  const updatedProgress: PlayerProgress = {
-    ...currentProgress,
-    playerId: payload.playerId,
-    gamesPlayed: currentProgress.gamesPlayed + 1,
-    wins: currentProgress.wins + (payload.won ? 1 : 0),
-    losses: currentProgress.losses + (payload.won ? 0 : 1),
-    totalRuns: currentProgress.totalRuns + runsScored,
-    totalHits: currentProgress.totalHits + hitsRecorded,
-    totalHomeRuns: currentProgress.totalHomeRuns + homeRunsHit,
-    experience: currentProgress.experience + xpGain,
-    currentLevel: Math.min(99, Math.floor((currentProgress.experience + xpGain) / 500) + 1)
-  };
+  const winIncrement = payload.won ? 1 : 0;
+  const lossIncrement = payload.won ? 0 : 1;
 
   await env.DB
     .prepare(
       `UPDATE player_progress
-       SET games_played = ?, wins = ?, losses = ?, total_runs = ?, total_hits = ?, total_home_runs = ?, experience = ?, current_level = ?, updated_at = CURRENT_TIMESTAMP
+       SET games_played = games_played + 1,
+           wins = wins + ?,
+           losses = losses + ?,
+           total_runs = total_runs + ?,
+           total_hits = total_hits + ?,
+           total_home_runs = total_home_runs + ?,
+           experience = experience + ?,
+           current_level = MIN(99, CAST(((experience + ?) / 500) AS INTEGER) + 1),
+           updated_at = CURRENT_TIMESTAMP
        WHERE player_id = ?`
     )
     .bind(
-      updatedProgress.gamesPlayed,
-      updatedProgress.wins,
-      updatedProgress.losses,
-      updatedProgress.totalRuns,
-      updatedProgress.totalHits,
-      updatedProgress.totalHomeRuns,
-      updatedProgress.experience,
-      updatedProgress.currentLevel,
+      winIncrement,
+      lossIncrement,
+      runsScored,
+      hitsRecorded,
+      homeRunsHit,
+      xpGain,
+      xpGain,
       payload.playerId
     )
     .run();
 
-  if (payload.playerName) {
+  const refreshedRow = await fetchUpdatedRow(env.DB, payload.playerId);
+  if (payload.playerName && refreshedRow) {
     // Upsert 'wins' stat
     await env.DB
       .prepare(
@@ -92,7 +89,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       .bind(
         payload.playerId,
         payload.playerName,
-        updatedProgress.wins
+        refreshedRow.wins
       )
       .run();
 
@@ -108,19 +105,18 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       .bind(
         payload.playerId,
         payload.playerName,
-        updatedProgress.experience
+        refreshedRow.experience
       )
       .run();
   }
 
-  const refreshedRow = await fetchUpdatedRow(env.DB, payload.playerId);
   if (env.KV && refreshedRow) {
     await env.KV.put(`progress:${payload.playerId}`, JSON.stringify(refreshedRow), {
       expirationTtl: 60 * 60 // 1 hour cache
     });
   }
 
-  return jsonResponse(refreshedRow ?? updatedProgress);
+  return jsonResponse(refreshedRow);
 };
 
 async function fetchUpdatedRow(db: D1Database, playerId: string): Promise<PlayerProgress | null> {

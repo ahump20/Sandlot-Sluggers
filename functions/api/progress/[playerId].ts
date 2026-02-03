@@ -48,7 +48,7 @@ export const onRequestPatch: PagesFunction<Env> = async ({ params, request, env 
   const updates: string[] = [];
   const values: unknown[] = [];
 
-  const numericMappings: Record<keyof PlayerProgress, string> = {
+  const columnMappings: Record<string, string> = {
     playerId: "player_id",
     gamesPlayed: "games_played",
     wins: "wins",
@@ -67,7 +67,10 @@ export const onRequestPatch: PagesFunction<Env> = async ({ params, request, env 
       continue;
     }
 
-    const column = numericMappings[key];
+    const column = columnMappings[key];
+    if (!column) {
+      return badRequest(`Unknown field '${key}'`);
+    }
     if (key === "unlockedCharacters" || key === "unlockedStadiums") {
       if (!Array.isArray(value)) {
         return badRequest(`Field '${key}' must be an array`);
