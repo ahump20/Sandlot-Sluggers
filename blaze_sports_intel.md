@@ -116,7 +116,7 @@ node mmi-live/dev-server.js
 
 ## Product 2: Sandlot Sluggers
 
-**Sandlot Sluggers** (code name: "Blaze Backyard Baseball") is a mobile-first, physics-driven baseball game built with 100% original IP. It features realistic ball physics, 3D WebGPU rendering, and Progressive Web App (PWA) support.
+**Sandlot Sluggers** is a mobile-first, physics-driven baseball game built with 100% original IP. It features realistic ball physics, 3D WebGPU rendering, and Progressive Web App (PWA) support.
 
 ### Game Features
 
@@ -268,9 +268,9 @@ All Blaze Sports Intel products share a common Cloudflare-native infrastructure 
 Sandlot-Sluggers/
 ├── src/                          # Sandlot Sluggers game source
 │   ├── core/GameEngine.ts        # Main game orchestrator
-│   ├── physics/BaseballPhysics.ts# Drag, Magnus effect, spin
+│   ├── physics/BaseballPhysics.ts # Drag, Magnus effect, spin
 │   ├── graphics/                 # Renderer, FieldBuilder
-│   ├── camera/CameraController.ts# Dynamic multi-mode camera
+│   ├── camera/CameraController.ts # Dynamic multi-mode camera
 │   ├── ai/FieldingAI.ts          # Intelligent fielding AI
 │   ├── animation/                # 11 animation types
 │   ├── audio/AudioManager.ts     # SFX, music, ambient
